@@ -1,28 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 {
 	"schemaVersion": 1,
 	"id": "real-rail-transit-mod",
@@ -33,8 +8,8 @@
 		"Real Rail Transit 模组制作工作室"
 	],
 	"contact": {
-		"homepage": "https://github.com/real-rail-transit",
-		"sources": "https://github.com/real-rail-transit/real-rail-transit-mod"
+		"homepage": "https://gitee.com/blkdg/real-rail-transit-mod",
+		"sources": "https://gitee.com/blkdg/real-rail-transit-mod.git"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/real-rail-transit-mod/icon.png",

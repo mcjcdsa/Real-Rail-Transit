@@ -1,0 +1,66 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+	"schemaVersion": 1,
+	"id": "real-rail-transit-mod",
+	"version": "${version}",
+	"name": "Real Rail Transit",
+	"description": "高度还原真实轨道交通系统的专业级模组，提供完整的列车驾驶、信号联锁、调度管理等核心功能",
+	"authors": [
+		"Real Rail Transit 模组制作工作室"
+	],
+	"contact": {
+		"homepage": "https://github.com/real-rail-transit",
+		"sources": "https://github.com/real-rail-transit/real-rail-transit-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/real-rail-transit-mod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.real.rail.transit.RealRailTransitMod"
+		],
+		"client": [
+			"com.real.rail.transit.RealRailTransitModClient"
+		],
+		"fabric-datagen": [
+			"com.real.rail.transit.RealRailTransitModDataGenerator"
+		]
+	},
+	"mixins": [
+		"real-rail-transit-mod.mixins.json",
+		{
+			"config": "real-rail-transit-mod.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.20.6",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

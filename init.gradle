@@ -1,0 +1,20 @@
+allprojects {
+    repositories {
+        // 优先使用国内镜像
+        maven {
+            name = "AliyunMaven"
+            url = "https://maven.aliyun.com/repository/public"
+        }
+        maven {
+            name = "HuaweiCloud"
+            url = "https://repo.huaweicloud.com/repository/maven/"
+        }
+        maven {
+            name = "TencentCloud"
+            url = "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/"
+        }
+    }
+}
+
+
+

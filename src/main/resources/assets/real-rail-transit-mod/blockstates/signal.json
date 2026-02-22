@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "signal_state=red": {
+      "model": "real-rail-transit-mod:block/signal_red"
+    },
+    "signal_state=yellow": {
+      "model": "real-rail-transit-mod:block/signal_yellow"
+    },
+    "signal_state=green": {
+      "model": "real-rail-transit-mod:block/signal_green"
+    },
+    "signal_state=guiding": {
+      "model": "real-rail-transit-mod:block/signal_guiding"
+    }
+  }
+}
+
+
+

@@ -1,0 +1,140 @@
+{
+  "train_running": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:train_running",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.train_running"
+  },
+  "train_rail_impact": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:train_rail_impact",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.train_rail_impact"
+  },
+  "train_power_collect": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:train_power_collect",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.train_power_collect"
+  },
+  "door_open": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:door_open",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.door_open"
+  },
+  "door_close": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:door_close",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.door_close"
+  },
+  "brake_normal": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:brake_normal",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.brake_normal"
+  },
+  "brake_quick": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:brake_quick",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.brake_quick"
+  },
+  "brake_emergency": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:brake_emergency",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.brake_emergency"
+  },
+  "button_click": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:button_click",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.button_click"
+  },
+  "alarm": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:alarm",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.alarm"
+  },
+  "arrival_notification": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:arrival_notification",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.arrival_notification"
+  },
+  "signal_change": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:signal_change",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.signal_change"
+  },
+  "train_horn": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:train_horn",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.train_horn"
+  },
+  "station_broadcast": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:station_broadcast",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.station_broadcast"
+  },
+  "gate_beep": {
+    "sounds": [
+      {
+        "name": "real-rail-transit-mod:gate_beep",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.real-rail-transit-mod.gate_beep"
+  }
+}
+
+
+

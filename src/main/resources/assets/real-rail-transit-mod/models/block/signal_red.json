@@ -1,0 +1,9 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "real-rail-transit-mod:block/signal_red"
+  }
+}
+
+
+

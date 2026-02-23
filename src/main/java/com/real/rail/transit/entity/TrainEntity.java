@@ -5,7 +5,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -172,10 +171,33 @@ public class TrainEntity extends Entity {
     }
     
     /**
+     * 设置当前速度
+     */
+    public void setCurrentSpeed(double speed) {
+        this.currentSpeed = Math.max(0, Math.min(speed, this.maxSpeed));
+    }
+    
+    /**
      * 设置驾驶模式
      */
     public void setDrivingMode(DrivingMode mode) {
         this.drivingMode = mode;
+    }
+    
+    private String trainId = "";
+    
+    /**
+     * 设置列车ID
+     */
+    public void setTrainId(String trainId) {
+        this.trainId = trainId != null ? trainId : "";
+    }
+    
+    /**
+     * 获取列车ID
+     */
+    public String getTrainId() {
+        return this.trainId;
     }
     
     /**

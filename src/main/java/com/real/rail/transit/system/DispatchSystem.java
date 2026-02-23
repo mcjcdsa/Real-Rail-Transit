@@ -147,18 +147,81 @@ public class DispatchSystem {
      * 发车
      */
     private void dispatchTrain(World world, ScheduleEntry schedule) {
-        // TODO: 实现发车逻辑
-        // 1. 在始发站生成列车实体
-        // 2. 设置列车运行参数
-        // 3. 注册到活跃列车列表
+        // 检查是否已经有相同车次的列车在运行
+        if (activeTrains.containsKey(schedule.getTrainId())) {
+            return; // 已有列车在运行，不发车
+        }
+        
+        // 查找始发站位置（简化：使用调度系统的车站位置映射）
+        BlockPos startPos = findStationPosition(world, schedule.getStartStation());
+        if (startPos == null) {
+            com.real.rail.transit.RealRailTransitMod.LOGGER.warn("找不到始发站: {}", schedule.getStartStation());
+            return;
+        }
+        
+        // 生成列车实体
+        TrainEntity train = new TrainEntity(
+            com.real.rail.transit.registry.ModEntities.TRAIN,
+            world
+        );
+        train.setPosition(startPos.getX() + 0.5, startPos.getY() + 1, startPos.getZ() + 0.5);
+        
+        // 设置列车运行参数
+        train.setTrainId(schedule.getTrainId());
+        train.setDrivingMode(TrainEntity.DrivingMode.ATO); // 使用自动驾驶模式
+        
+        // 生成列车到世界
+        world.spawnEntity(train);
+        
+        // 注册到活跃列车列表
+        registerTrain(schedule.getTrainId(), train);
+        
+        com.real.rail.transit.RealRailTransitMod.LOGGER.info("列车 {} 已发车，从 {} 到 {}", 
+            schedule.getTrainId(), schedule.getStartStation(), schedule.getEndStation());
     }
     
     /**
      * 更新列车状态
      */
     private void updateTrainStatus(World world, TrainEntity train) {
-        // TODO: 实现列车状态更新逻辑
-        // 检查是否到达车站、是否需要停车等
+        // 检查列车是否还在世界中
+        if (train.isRemoved() || !train.isAlive()) {
+            // 列车已移除，取消注册
+            String trainId = train.getTrainId();
+            if (trainId != null) {
+                unregisterTrain(trainId);
+            }
+            return;
+        }
+        
+        // 检查是否到达车站
+        BlockPos trainPos = train.getBlockPos();
+        ScheduleEntry schedule = getSchedule(train.getTrainId());
+        if (schedule != null) {
+            // 检查是否到达停靠站
+            for (String station : schedule.getStations()) {
+                BlockPos stationPos = findStationPosition(world, station);
+                if (stationPos != null && trainPos.isWithinDistance(stationPos, 3.0)) {
+                    // 到达车站，停车
+                    train.setTargetSpeed(0);
+                    // TODO: 实现停站逻辑（开门、等待、关门、继续运行）
+                }
+            }
+        }
+    }
+    
+    /**
+     * 查找车站位置（简化实现）
+     */
+    private BlockPos findStationPosition(World world, String stationName) {
+        // 简化实现：使用车站名称的哈希值作为坐标偏移
+        // 实际应该从配置文件或数据库读取
+        int hash = stationName.hashCode();
+        int x = (hash & 0xFFFF) - 32768;
+        int z = ((hash >> 16) & 0xFFFF) - 32768;
+        int y = 64; // 默认高度
+        
+        return new BlockPos(x, y, z);
     }
 }
 

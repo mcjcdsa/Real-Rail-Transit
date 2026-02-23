@@ -1,17 +1,31 @@
 package com.real.rail.transit.registry;
 
 import com.real.rail.transit.RealRailTransitMod;
+import com.real.rail.transit.block.CableBlock;
+import com.real.rail.transit.block.CleanerBlock;
+import com.real.rail.transit.block.ConnectionPartBlock;
 import com.real.rail.transit.block.ContactNetworkBlock;
+import com.real.rail.transit.block.DaojiMachineBlock;
+import com.real.rail.transit.block.GuardTrackBlock;
+import com.real.rail.transit.block.SensorControllerBlock;
+import com.real.rail.transit.block.SensorLayoutControllerBlock;
 import com.real.rail.transit.block.SignalBlock;
+import com.real.rail.transit.block.SignalLayoutControllerBlock;
+import com.real.rail.transit.block.SwitchBlock;
 import com.real.rail.transit.block.ThirdRailBlock;
 import com.real.rail.transit.block.TrackBlock;
+import com.real.rail.transit.block.TrackConstructionControlPanelBlock;
+import com.real.rail.transit.block.TrackControlPanelBlock;
+import com.real.rail.transit.block.TrainPowerSettingControllerBlock;
 import com.real.rail.transit.block.TurnoutBlock;
 import com.real.rail.transit.station.ArrivalDisplayScreenBlock;
 import com.real.rail.transit.station.AutomaticStaircaseBlock;
 import com.real.rail.transit.station.BarricadeBlock;
 import com.real.rail.transit.station.CeilingBlock;
 import com.real.rail.transit.station.DisplayScreenBlock;
+import com.real.rail.transit.station.ElectronicDoorControllerBlock;
 import com.real.rail.transit.station.ElevatorBlock;
+import com.real.rail.transit.station.ElevatorTrackBlock;
 import com.real.rail.transit.station.FireExtinguisherBlock;
 import com.real.rail.transit.station.FireWaterBlock;
 import com.real.rail.transit.station.GateBlock;
@@ -21,6 +35,7 @@ import com.real.rail.transit.station.PostageBlock;
 import com.real.rail.transit.station.ShieldDoorBlock;
 import com.real.rail.transit.station.SmallTVBlock;
 import com.real.rail.transit.station.StaircaseStepBlock;
+import com.real.rail.transit.station.StationConstructionControlPanelBlock;
 import com.real.rail.transit.station.StationRadioBlock;
 import com.real.rail.transit.station.TicketMachineBlock;
 import com.real.rail.transit.station.TileWallBlock;
@@ -60,6 +75,46 @@ public class ModBlocks {
     // 接触网供电方块
     public static final Block CONTACT_NETWORK = registerBlock("contact_network",
         new ContactNetworkBlock(FabricBlockSettings.create().strength(2.5f).nonOpaque()),
+        new Item.Settings());
+    
+    // 连接部分
+    public static final Block CONNECTION_PART = registerBlock("connection_part",
+        new ConnectionPartBlock(FabricBlockSettings.create().strength(3.0f)),
+        new Item.Settings());
+    
+    // 辙叉
+    public static final Block SWITCH = registerBlock("switch",
+        new SwitchBlock(FabricBlockSettings.create().strength(3.0f)),
+        new Item.Settings());
+    
+    // 护轨
+    public static final Block GUARD_TRACK = registerBlock("guard_track",
+        new GuardTrackBlock(FabricBlockSettings.create().strength(3.0f)),
+        new Item.Settings());
+    
+    // 线缆
+    public static final Block CABLE = registerBlock("cable",
+        new CableBlock(FabricBlockSettings.create().strength(1.5f)),
+        new Item.Settings());
+    
+    // 列车供电设置器
+    public static final Block TRAIN_POWER_SETTING_CONTROLLER = registerBlock("train_power_setting_controller",
+        new TrainPowerSettingControllerBlock(FabricBlockSettings.create().strength(2.5f)),
+        new Item.Settings());
+    
+    // 盾构机
+    public static final Block DAOJI_MACHINE = registerBlock("daoji_machine",
+        new DaojiMachineBlock(FabricBlockSettings.create().strength(5.0f)),
+        new Item.Settings());
+    
+    // 线路建设控制面板
+    public static final Block TRACK_CONSTRUCTION_CONTROL_PANEL = registerBlock("track_construction_control_panel",
+        new TrackConstructionControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
+        new Item.Settings());
+    
+    // 清除器
+    public static final Block CLEANER = registerBlock("cleaner",
+        new CleanerBlock(FabricBlockSettings.create().strength(1.0f)),
         new Item.Settings());
     
     // ========== 车站设施类 ==========
@@ -111,6 +166,42 @@ public class ModBlocks {
     // 车站广播器
     public static final Block STATION_RADIO = registerBlock("station_radio",
         new StationRadioBlock(FabricBlockSettings.create().strength(2.0f)),
+        new Item.Settings());
+    
+    // 电梯轨道
+    public static final Block ELEVATOR_TRACK = registerBlock("elevator_track",
+        new ElevatorTrackBlock(FabricBlockSettings.create().strength(3.0f)),
+        new Item.Settings());
+    
+    // 电子门控制器
+    public static final Block ELECTRONIC_DOOR_CONTROLLER = registerBlock("electronic_door_controller",
+        new ElectronicDoorControllerBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
+        new Item.Settings());
+    
+    // 车站建设控制面板
+    public static final Block STATION_CONSTRUCTION_CONTROL_PANEL = registerBlock("station_construction_control_panel",
+        new StationConstructionControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
+        new Item.Settings());
+    
+    // ========== 线路设施类 ==========
+    // 线路控制面板
+    public static final Block TRACK_CONTROL_PANEL = registerBlock("track_control_panel",
+        new TrackControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
+        new Item.Settings());
+    
+    // 信号铺设器
+    public static final Block SIGNAL_LAYOUT_CONTROLLER = registerBlock("signal_layout_controller",
+        new SignalLayoutControllerBlock(FabricBlockSettings.create().strength(2.0f)),
+        new Item.Settings());
+    
+    // 传感器
+    public static final Block SENSOR_CONTROLLER = registerBlock("sensor_controller",
+        new SensorControllerBlock(FabricBlockSettings.create().strength(2.0f)),
+        new Item.Settings());
+    
+    // 传感器铺设器
+    public static final Block SENSOR_LAYOUT_CONTROLLER = registerBlock("sensor_layout_controller",
+        new SensorLayoutControllerBlock(FabricBlockSettings.create().strength(2.0f)),
         new Item.Settings());
     
     // ========== 车站建筑类 ==========

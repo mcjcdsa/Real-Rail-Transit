@@ -1,8 +1,10 @@
 package com.real.rail.transit.station;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.IntProperty;
 import net.minecraft.util.math.BlockPos;
@@ -56,15 +58,43 @@ public class ArrivalDisplayScreenBlock extends Block {
         // TODO: Store trainId and destination in BlockEntity
     }
     
-    public net.minecraft.util.ActionResult onUse(net.minecraft.block.BlockState state, World world, BlockPos pos, 
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new com.real.rail.transit.station.entity.ArrivalDisplayScreenBlockEntity(pos, state);
+    }
+    
+    public boolean hasBlockEntity() {
+        return true;
+    }
+    
+    public net.minecraft.util.ActionResult onUse(BlockState state, World world, BlockPos pos, 
                                                  net.minecraft.entity.player.PlayerEntity player, 
                                                  net.minecraft.util.Hand hand, net.minecraft.util.hit.BlockHitResult hit) {
-        if (world.isClient) {
-            // 客户端打开配置界面
-            // TODO: 打开到站显示屏配置界面
-            com.real.rail.transit.RealRailTransitMod.LOGGER.info("配置到站显示屏: {}", pos);
+        if (!world.isClient) {
+            net.minecraft.screen.NamedScreenHandlerFactory screenHandlerFactory = createScreenHandlerFactory(state, world, pos);
+            if (screenHandlerFactory != null) {
+                player.openHandledScreen(screenHandlerFactory);
+            }
         }
         return net.minecraft.util.ActionResult.SUCCESS;
+    }
+    
+    public net.minecraft.screen.NamedScreenHandlerFactory createScreenHandlerFactory(BlockState state, World world, BlockPos pos) {
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        if (blockEntity instanceof com.real.rail.transit.station.entity.ArrivalDisplayScreenBlockEntity) {
+            BlockPos finalPos = pos.toImmutable();
+            return new net.minecraft.screen.NamedScreenHandlerFactory() {
+                @Override
+                public net.minecraft.text.Text getDisplayName() {
+                    return net.minecraft.text.Text.translatable("gui.real-rail-transit-mod.arrival_display_screen.title");
+                }
+                
+                @Override
+                public net.minecraft.screen.ScreenHandler createMenu(int syncId, net.minecraft.entity.player.PlayerInventory inventory, net.minecraft.entity.player.PlayerEntity player) {
+                    return new com.real.rail.transit.station.screen.ArrivalDisplayScreenHandler(syncId, inventory, finalPos);
+                }
+            };
+        }
+        return null;
     }
     
     /**

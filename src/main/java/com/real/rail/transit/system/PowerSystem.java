@@ -26,6 +26,7 @@ public class PowerSystem {
     // 存储供电区段状态
     private final Map<BlockPos, PowerType> powerSections = new HashMap<>();
     private final Map<BlockPos, Boolean> powerStates = new HashMap<>(); // true为有电，false为断电
+    private final Set<BlockPos> cables = new java.util.HashSet<>(); // 存储线缆位置
     
     private PowerSystem() {
     }
@@ -70,6 +71,33 @@ public class PowerSystem {
     public boolean canTrainGetPower(BlockPos pos, PowerType trainPowerType) {
         PowerType sectionType = getPowerType(pos);
         return isPowered(pos) && sectionType == trainPowerType;
+    }
+    
+    /**
+     * 注册线缆
+     */
+    public void registerCable(World world, BlockPos pos) {
+        cables.add(pos);
+    }
+    
+    /**
+     * 移除线缆
+     */
+    public void unregisterCable(BlockPos pos) {
+        cables.remove(pos);
+    }
+    
+    /**
+     * 检查线缆是否连接到供电系统
+     */
+    public boolean isCableConnected(BlockPos pos) {
+        // 检查线缆是否在供电区段附近
+        for (BlockPos powerPos : powerSections.keySet()) {
+            if (pos.isWithinDistance(powerPos, 5.0)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 

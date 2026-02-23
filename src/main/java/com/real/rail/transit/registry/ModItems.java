@@ -2,7 +2,9 @@ package com.real.rail.transit.registry;
 
 import com.real.rail.transit.RealRailTransitMod;
 import com.real.rail.transit.item.PresetItem;
+import com.real.rail.transit.item.SettingControllerItem;
 import com.real.rail.transit.item.ShieldDoorKeyItem;
+import com.real.rail.transit.item.StationBrushItem;
 import com.real.rail.transit.item.TrackBrushItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
@@ -24,6 +26,14 @@ public class ModItems {
     // 屏蔽门钥匙
     public static final Item SHIELD_DOOR_KEY = registerItem("shield_door_key",
         new ShieldDoorKeyItem(new Item.Settings()));
+    
+    // 车站刷子
+    public static final Item STATION_BRUSH = registerItem("station_brush",
+        new StationBrushItem(new Item.Settings()));
+    
+    // 设置器
+    public static final Item SETTING_CONTROLLER = registerItem("setting_controller",
+        new SettingControllerItem(new Item.Settings()));
     
     /**
      * 注册物品

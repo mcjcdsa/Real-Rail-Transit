@@ -1,10 +1,13 @@
 package com.real.rail.transit;
 
 import com.real.rail.transit.addon.AddonManager;
+import com.real.rail.transit.network.ModNetworkPackets;
+import com.real.rail.transit.registry.ModBlockEntities;
 import com.real.rail.transit.registry.ModBlocks;
 import com.real.rail.transit.registry.ModEntities;
 import com.real.rail.transit.registry.ModItemGroups;
 import com.real.rail.transit.registry.ModItems;
+import com.real.rail.transit.registry.ModScreenHandlers;
 import com.real.rail.transit.world.WorldTickHandler;
 import net.fabricmc.api.ModInitializer;
 
@@ -29,6 +32,15 @@ public class RealRailTransitMod implements ModInitializer {
 		
 		// 注册方块
 		ModBlocks.registerModBlocks();
+		
+		// 注册方块实体
+		ModBlockEntities.register();
+		
+		// 注册GUI处理器
+		ModScreenHandlers.register();
+		
+		// 注册网络包
+		ModNetworkPackets.register();
 		
 		// 注册物品
 		ModItems.registerModItems();

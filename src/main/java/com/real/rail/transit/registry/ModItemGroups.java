@@ -27,8 +27,16 @@ public class ModItemGroups {
                 entries.add(ModBlocks.TRACK);
                 entries.add(ModBlocks.SIGNAL);
                 entries.add(ModBlocks.TURNOUT);
+                entries.add(ModBlocks.CONNECTION_PART);
+                entries.add(ModBlocks.SWITCH);
+                entries.add(ModBlocks.GUARD_TRACK);
+                entries.add(ModBlocks.CABLE);
                 entries.add(ModBlocks.THIRD_RAIL);
                 entries.add(ModBlocks.CONTACT_NETWORK);
+                entries.add(ModBlocks.TRAIN_POWER_SETTING_CONTROLLER);
+                entries.add(ModBlocks.DAOJI_MACHINE);
+                entries.add(ModBlocks.TRACK_CONSTRUCTION_CONTROL_PANEL);
+                entries.add(ModBlocks.CLEANER);
                 
                 // ========== 车站设施类 ==========
                 entries.add(ModBlocks.UPPER_SHIELD_DOOR);
@@ -41,6 +49,15 @@ public class ModItemGroups {
                 entries.add(ModBlocks.GATE);
                 entries.add(ModBlocks.SMALL_TV);
                 entries.add(ModBlocks.STATION_RADIO);
+                entries.add(ModBlocks.ELEVATOR_TRACK);
+                entries.add(ModBlocks.ELECTRONIC_DOOR_CONTROLLER);
+                entries.add(ModBlocks.STATION_CONSTRUCTION_CONTROL_PANEL);
+                
+                // ========== 线路设施类 ==========
+                entries.add(ModBlocks.TRACK_CONTROL_PANEL);
+                entries.add(ModBlocks.SIGNAL_LAYOUT_CONTROLLER);
+                entries.add(ModBlocks.SENSOR_CONTROLLER);
+                entries.add(ModBlocks.SENSOR_LAYOUT_CONTROLLER);
                 
                 // ========== 车站建筑类 ==========
                 entries.add(ModBlocks.BARRICADE);
@@ -56,6 +73,8 @@ public class ModItemGroups {
                 // ========== 工具物品 ==========
                 entries.add(ModItems.PRESET);
                 entries.add(ModItems.TRACK_BRUSH);
+                entries.add(ModItems.STATION_BRUSH);
+                entries.add(ModItems.SETTING_CONTROLLER);
                 entries.add(ModItems.SHIELD_DOOR_KEY);
             })
             .build()

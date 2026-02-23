@@ -72,8 +72,29 @@ public class TrainMovementSystem {
         BlockPos trainPos = train.getBlockPos();
         PowerSystem powerSystem = PowerSystem.getInstance();
         
-        // TODO: 根据列车的供电类型检查当前位置是否有电
-        // 如果无电，列车失去动力
+        // 检查列车当前位置是否有供电
+        // 简化实现：检查当前位置和周围位置的供电状态
+        boolean hasPower = false;
+        PowerSystem.PowerType trainPowerType = PowerSystem.PowerType.THIRD_RAIL; // 默认第三轨
+        
+        // 检查当前位置及周围位置
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                BlockPos checkPos = trainPos.add(x, 0, z);
+                if (powerSystem.canTrainGetPower(checkPos, trainPowerType)) {
+                    hasPower = true;
+                    break;
+                }
+            }
+            if (hasPower) break;
+        }
+        
+        // 如果无电，列车失去动力（减速）
+        if (!hasPower && train.getCurrentSpeed() > 0) {
+            // 逐渐减速
+            double currentSpeed = train.getCurrentSpeed();
+            train.setCurrentSpeed(Math.max(0, currentSpeed - 0.5)); // 每秒减速0.5 m/s
+        }
     }
     
     /**

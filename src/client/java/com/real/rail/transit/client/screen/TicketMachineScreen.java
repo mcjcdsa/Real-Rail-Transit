@@ -30,12 +30,12 @@ public class TicketMachineScreen extends HandledScreen<TicketMachineScreenHandle
         super.init();
         
         int centerX = this.width / 2;
-        int centerY = this.height / 2;
+        int startY = 50;
         
         // 票价输入框（支持更大的价格范围）
         this.priceField = new TextFieldWidget(
             this.textRenderer,
-            centerX - 100, centerY - 40, 200, 20,
+            centerX - 100, startY + 20, 200, 20,
             Text.translatable("gui.real-rail-transit-mod.ticket_machine.price_field")
         );
         this.priceField.setMaxLength(5);
@@ -49,22 +49,29 @@ public class TicketMachineScreen extends HandledScreen<TicketMachineScreenHandle
         this.setPriceButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.ticket_machine.set_price"),
             button -> this.setPrice()
-        ).dimensions(centerX - 100, centerY - 10, 90, 20).build();
+        ).dimensions(centerX - 100, startY + 50, 90, 20).build();
         this.addDrawableChild(this.setPriceButton);
         
         // 购买车票按钮
         this.buyTicketButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.ticket_machine.buy_ticket"),
             button -> this.buyTicket()
-        ).dimensions(centerX + 10, centerY - 10, 90, 20).build();
+        ).dimensions(centerX + 10, startY + 50, 90, 20).build();
         this.addDrawableChild(this.buyTicketButton);
         
-        // 状态信息按钮
+        // 状态切换按钮
         ButtonWidget statusButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.ticket_machine.status"),
             button -> this.toggleStatus()
-        ).dimensions(centerX - 50, centerY + 20, 100, 20).build();
+        ).dimensions(centerX - 50, startY + 140, 100, 20).build();
         this.addDrawableChild(statusButton);
+        
+        // 关闭按钮
+        ButtonWidget closeButton = ButtonWidget.builder(
+            Text.translatable("gui.real-rail-transit-mod.close"),
+            button -> this.close()
+        ).dimensions(centerX - 50, this.height - 30, 100, 20).build();
+        this.addDrawableChild(closeButton);
     }
     
     private void setPrice() {
@@ -114,46 +121,77 @@ public class TicketMachineScreen extends HandledScreen<TicketMachineScreenHandle
     
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-        
-        // 绘制半透明背景
-        context.fill(centerX - 200, centerY - 80, centerX + 200, centerY + 80, 0xC0101010);
-        context.drawBorder(centerX - 200, centerY - 80, 400, 160, 0xFF404040);
+        // 绘制半透明黑色背景
+        context.fill(0, 0, this.width, this.height, 0xC0101010);
     }
     
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
-        int centerX = this.width / 2;
-        
-        // 绘制标题
-        String title = Text.translatable("gui.real-rail-transit-mod.ticket_machine.title").getString();
-        int titleWidth = this.textRenderer.getWidth(title);
-        context.drawText(this.textRenderer, title, centerX - titleWidth / 2, this.height / 2 - 70, 0xFFFFFF, false);
-        
-        // 绘制票价标签
-        String priceLabel = Text.translatable("gui.real-rail-transit-mod.ticket_machine.price_label").getString();
-        context.drawText(this.textRenderer, priceLabel, centerX - 100, this.height / 2 - 55, 0xCCCCCC, false);
-        
-        // 绘制状态信息
-        if (blockEntity != null) {
-            String statusText = blockEntity.isWorking() 
-                ? Text.translatable("gui.real-rail-transit-mod.ticket_machine.status_working").getString()
-                : Text.translatable("gui.real-rail-transit-mod.ticket_machine.status_broken").getString();
-            int statusColor = blockEntity.isWorking() ? 0xFF00FF00 : 0xFFFF0000;
-            context.drawText(this.textRenderer, statusText, centerX - 100, this.height / 2 + 15, statusColor, false);
-            
-            // 绘制已售出票数
-            String countText = Text.translatable("gui.real-rail-transit-mod.ticket_machine.sold_count", 
-                blockEntity.getTicketCount()).getString();
-            context.drawText(this.textRenderer, countText, centerX - 100, this.height / 2 + 30, 0xCCCCCC, false);
-        }
+        // 不绘制物品栏标签
     }
     
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         this.renderBackground(context, mouseX, mouseY, delta);
         super.render(context, mouseX, mouseY, delta);
+        
+        int centerX = this.width / 2;
+        int startY = 50;
+        
+        // 绘制标题
+        context.drawCenteredTextWithShadow(
+            this.textRenderer,
+            Text.translatable("gui.real-rail-transit-mod.ticket_machine.title"),
+            centerX,
+            20,
+            0xFFFFFF
+        );
+        
+        // 绘制票价标签
+        context.drawText(
+            this.textRenderer,
+            Text.translatable("gui.real-rail-transit-mod.ticket_machine.price_label"),
+            centerX - 100,
+            startY,
+            0xCCCCCC,
+            false
+        );
+        
+        // 绘制状态信息
+        if (blockEntity != null) {
+            String statusText = blockEntity.isWorking() 
+                ? Text.translatable("gui.real-rail-transit-mod.ticket_machine.status_working").getString()
+                : Text.translatable("gui.real-rail-transit-mod.ticket_machine.status_broken").getString();
+            int statusColor = blockEntity.isWorking() ? 0x00FF00 : 0xFF0000;
+            context.drawText(
+                this.textRenderer,
+                Text.translatable("gui.real-rail-transit-mod.ticket_machine.status_label"),
+                centerX - 100,
+                startY + 80,
+                0xCCCCCC,
+                false
+            );
+            context.drawText(
+                this.textRenderer,
+                statusText,
+                centerX - 100,
+                startY + 95,
+                statusColor,
+                false
+            );
+            
+            // 绘制已售出票数
+            context.drawText(
+                this.textRenderer,
+                Text.translatable("gui.real-rail-transit-mod.ticket_machine.sold_count", 
+                    blockEntity.getTicketCount()),
+                centerX - 100,
+                startY + 115,
+                0xCCCCCC,
+                false
+            );
+        }
+        
         this.drawMouseoverTooltip(context, mouseX, mouseY);
     }
 }

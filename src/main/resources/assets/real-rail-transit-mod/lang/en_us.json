@@ -241,6 +241,14 @@
   "gui.real-rail-transit-mod.arrival_display_screen.color_field": "Text Color",
   "gui.real-rail-transit-mod.arrival_display_screen.save": "Save",
   
+  "gui.real-rail-transit-mod.track_construction_control_panel.title": "Track Construction Control Panel",
+  "gui.real-rail-transit-mod.track_construction_control_panel.info": "Track Construction Control Panel\n\nFeatures under development...\n\nWill include:\n- Track type selection\n- Power supply method selection\n- Signal configuration\n- Batch operation options",
+  "gui.real-rail-transit-mod.station_construction_control_panel.title": "Station Construction Control Panel",
+  "gui.real-rail-transit-mod.station_construction_control_panel.info": "Station Construction Control Panel\n\nFeatures under development...\n\nWill include:\n- Station facility selection\n- Shield door configuration\n- Display screen settings\n- Batch operation options",
+  "gui.real-rail-transit-mod.track_control_panel.title": "Track Control Panel",
+  "gui.real-rail-transit-mod.track_control_panel.info": "Track Control Panel\n\nFeatures under development...\n\nWill include:\n- Track statistics\n- Signal status\n- Train running status\n- Track control options",
+  "gui.real-rail-transit-mod.close": "Close",
+  
   "itemGroup.real-rail-transit-mod.main": "Real Rail Transit"
 }
 

@@ -27,7 +27,9 @@ public class TicketMachineScreenHandler extends ScreenHandler {
             Registries.SCREEN_HANDLER,
             Identifier.of(RealRailTransitMod.MOD_ID, "ticket_machine"),
             new ScreenHandlerType<>((syncId, inventory) -> {
-                throw new UnsupportedOperationException("Use constructor with PacketByteBuf or BlockPos");
+                // 这个工厂方法不应该被调用，因为客户端会使用 PacketByteBuf 构造函数
+                // 但如果被调用，返回一个使用默认位置的 ScreenHandler
+                return new TicketMachineScreenHandler(syncId, inventory, BlockPos.ORIGIN);
             }, null)
         );
     }

@@ -1,10 +1,12 @@
 package com.real.rail.transit.station;
 
-import com.real.rail.transit.RealRailTransitMod;
+import com.real.rail.transit.station.screen.StationConstructionControlPanelScreenHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -32,17 +34,35 @@ public class StationConstructionControlPanelBlock extends Block {
     
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
-            // 显示车站建设选项
-            player.sendMessage(Text.translatable("block.real-rail-transit-mod.station_construction_control_panel.info"), false);
-            RealRailTransitMod.LOGGER.info("车站建设控制面板 {} 被使用", pos);
-            
-            // TODO: 打开车站建设GUI，包含：
-            // - 车站设施选择
-            // - 屏蔽门配置
-            // - 显示屏设置
-            // - 批量操作选项
+            try {
+                NamedScreenHandlerFactory screenHandlerFactory = createScreenHandlerFactory(state, world, pos);
+                if (screenHandlerFactory != null) {
+                    player.openHandledScreen(screenHandlerFactory);
+                }
+            } catch (Exception e) {
+                com.real.rail.transit.RealRailTransitMod.LOGGER.error("打开车站建设控制面板GUI时出错", e);
+            }
         }
         return ActionResult.SUCCESS;
+    }
+    
+    public NamedScreenHandlerFactory createScreenHandlerFactory(BlockState state, World world, BlockPos pos) {
+        BlockPos finalPos = pos.toImmutable();
+        return new NamedScreenHandlerFactory() {
+            @Override
+            public Text getDisplayName() {
+                return Text.translatable("gui.real-rail-transit-mod.station_construction_control_panel.title");
+            }
+            
+            @Override
+            public net.minecraft.screen.ScreenHandler createMenu(int syncId, net.minecraft.entity.player.PlayerInventory inventory, net.minecraft.entity.player.PlayerEntity player) {
+                return new StationConstructionControlPanelScreenHandler(syncId, inventory, finalPos);
+            }
+            
+            public void writeScreenOpeningData(PlayerEntity player, PacketByteBuf buf) {
+                buf.writeBlockPos(finalPos);
+            }
+        };
     }
 }
 

@@ -68,6 +68,26 @@ processResources {
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version
 	}
+	
+	// 复制内置列车到 builtin_trains 目录
+	File builtinTrainsSourceDir = file("KunMing Line 1 Train")
+	File builtinTrainsDestDir = file("src/main/resources/builtin_trains/KunMing Line 1 Train")
+	
+	if (builtinTrainsSourceDir.exists() && builtinTrainsSourceDir.isDirectory()) {
+		copy {
+			from builtinTrainsSourceDir
+			into builtinTrainsDestDir
+		}
+	}
+	
+	// 同时复制到 addons 目录以保持兼容性
+	File addonsDestDir = file("src/main/resources/addons/KunMing Line 1 Train")
+	if (builtinTrainsSourceDir.exists() && builtinTrainsSourceDir.isDirectory()) {
+		copy {
+			from builtinTrainsSourceDir
+			into addonsDestDir
+		}
+	}
 }
 
 tasks.withType(JavaCompile).configureEach {

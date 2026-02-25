@@ -1,11 +1,12 @@
 package com.real.rail.transit.block;
 
-import com.real.rail.transit.RealRailTransitMod;
-import com.real.rail.transit.track.TrackNetwork;
+import com.real.rail.transit.block.screen.TrackControlPanelScreenHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -33,19 +34,35 @@ public class TrackControlPanelBlock extends Block {
     
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
-            // 显示线路统计信息
-            TrackNetwork network = TrackNetwork.getInstance();
-            int trackCount = network.trackConnections.size();
-            
-            // TODO: 获取信号机数量
-            
-            player.sendMessage(Text.translatable("block.real-rail-transit-mod.track_control_panel.info",
-                trackCount), false);
-            RealRailTransitMod.LOGGER.info("线路控制面板 {} 显示信息: 轨道数={}", pos, trackCount);
-            
-            // TODO: 打开线路控制GUI
+            try {
+                NamedScreenHandlerFactory screenHandlerFactory = createScreenHandlerFactory(state, world, pos);
+                if (screenHandlerFactory != null) {
+                    player.openHandledScreen(screenHandlerFactory);
+                }
+            } catch (Exception e) {
+                com.real.rail.transit.RealRailTransitMod.LOGGER.error("打开线路控制面板GUI时出错", e);
+            }
         }
         return ActionResult.SUCCESS;
+    }
+    
+    public NamedScreenHandlerFactory createScreenHandlerFactory(BlockState state, World world, BlockPos pos) {
+        BlockPos finalPos = pos.toImmutable();
+        return new NamedScreenHandlerFactory() {
+            @Override
+            public Text getDisplayName() {
+                return Text.translatable("gui.real-rail-transit-mod.track_control_panel.title");
+            }
+            
+            @Override
+            public net.minecraft.screen.ScreenHandler createMenu(int syncId, net.minecraft.entity.player.PlayerInventory inventory, net.minecraft.entity.player.PlayerEntity player) {
+                return new TrackControlPanelScreenHandler(syncId, inventory, finalPos);
+            }
+            
+            public void writeScreenOpeningData(PlayerEntity player, PacketByteBuf buf) {
+                buf.writeBlockPos(finalPos);
+            }
+        };
     }
 }
 

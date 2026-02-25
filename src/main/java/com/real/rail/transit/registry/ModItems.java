@@ -5,7 +5,10 @@ import com.real.rail.transit.item.PresetItem;
 import com.real.rail.transit.item.SettingControllerItem;
 import com.real.rail.transit.item.ShieldDoorKeyItem;
 import com.real.rail.transit.item.StationBrushItem;
+import com.real.rail.transit.item.StationConstructionControlPanelItem;
 import com.real.rail.transit.item.TrackBrushItem;
+import com.real.rail.transit.item.TrackConstructionControlPanelItem;
+import com.real.rail.transit.item.TrackControlPanelItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -34,6 +37,18 @@ public class ModItems {
     // 设置器
     public static final Item SETTING_CONTROLLER = registerItem("setting_controller",
         new SettingControllerItem(new Item.Settings()));
+    
+    // 线路建设控制面板（只能右键打开GUI，不能放置）
+    public static final Item TRACK_CONSTRUCTION_CONTROL_PANEL = registerItem("track_construction_control_panel",
+        new TrackConstructionControlPanelItem(new Item.Settings()));
+    
+    // 车站建设控制面板（只能右键打开GUI，不能放置）
+    public static final Item STATION_CONSTRUCTION_CONTROL_PANEL = registerItem("station_construction_control_panel",
+        new StationConstructionControlPanelItem(new Item.Settings()));
+    
+    // 线路控制面板（只能右键打开GUI，不能放置）
+    public static final Item TRACK_CONTROL_PANEL = registerItem("track_control_panel",
+        new TrackControlPanelItem(new Item.Settings()));
     
     /**
      * 注册物品

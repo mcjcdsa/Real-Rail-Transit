@@ -1,0 +1,26 @@
+{
+  "train_id": "kml_1",
+  "train_name": "昆明轨道交通1号线",
+  "description": "昆明轨道交通1号线列车模型（2012年6号线涂装）- 模组自带列车",
+  "version": "1.5",
+  "is_builtin": true,
+  "max_speed": 120.0,
+  "acceleration": 0.8,
+  "deceleration": 1.2,
+  "power_type": "catenary",
+  "car_length": 21.0,
+  "car_count": 6,
+  "source_path": "assets/mtr/kml_1_js/kml_1.bbmodel",
+  "resource_path": "assets/mtr/kml_1_js/kml_1.png",
+  "model_properties": "assets/mtr/kml_1_js/kml_6_2012old_b_js.json",
+  "texture_id": "mtr:kml_1_js/kml_1",
+  "door_animation_type": "PLUG_FAST",
+  "bve_sound_base_id": "kml1",
+  "script_files": [
+    "mtr:kmjs/km_const1.js",
+    "mtr:kml_1_js/doorlight/doorlight.js",
+    "mtr:kmjs/ldm/ldm1.js",
+    "mtr:kmjs/led/led_km1.js"
+  ]
+}
+

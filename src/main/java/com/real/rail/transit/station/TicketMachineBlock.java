@@ -7,8 +7,10 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.text.Text;
@@ -66,12 +68,21 @@ public class TicketMachineBlock extends Block implements BlockEntityProvider {
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity instanceof TicketMachineBlockEntity) {
             BlockPos finalPos = pos.toImmutable();
-            return new SimpleNamedScreenHandlerFactory(
-                (syncId, inventory, player) -> new com.real.rail.transit.station.screen.TicketMachineScreenHandler(
-                    syncId, inventory, finalPos
-                ),
-                Text.translatable("gui.real-rail-transit-mod.ticket_machine.title")
-            );
+            return new NamedScreenHandlerFactory() {
+                @Override
+                public Text getDisplayName() {
+                    return Text.translatable("gui.real-rail-transit-mod.ticket_machine.title");
+                }
+                
+                @Override
+                public ScreenHandler createMenu(int syncId, PlayerInventory inventory, PlayerEntity player) {
+                    return new com.real.rail.transit.station.screen.TicketMachineScreenHandler(syncId, inventory, finalPos);
+                }
+                
+                public void writeScreenOpeningData(PlayerEntity player, PacketByteBuf buf) {
+                    buf.writeBlockPos(finalPos);
+                }
+            };
         }
         return null;
     }

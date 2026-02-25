@@ -107,10 +107,11 @@ public class ModBlocks {
         new DaojiMachineBlock(FabricBlockSettings.create().strength(5.0f)),
         new Item.Settings());
     
-    // 线路建设控制面板
-    public static final Block TRACK_CONSTRUCTION_CONTROL_PANEL = registerBlock("track_construction_control_panel",
-        new TrackConstructionControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
-        new Item.Settings());
+    // 线路建设控制面板（不注册为方块，只作为物品使用）
+    // 注意：此方块不注册BlockItem，只注册Block（保留类定义），实际使用Item版本
+    public static final Block TRACK_CONSTRUCTION_CONTROL_PANEL = Registry.register(Registries.BLOCK,
+        Identifier.of(RealRailTransitMod.MOD_ID, "track_construction_control_panel"),
+        new TrackConstructionControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()));
     
     // 清除器
     public static final Block CLEANER = registerBlock("cleaner",
@@ -178,16 +179,18 @@ public class ModBlocks {
         new ElectronicDoorControllerBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
         new Item.Settings());
     
-    // 车站建设控制面板
-    public static final Block STATION_CONSTRUCTION_CONTROL_PANEL = registerBlock("station_construction_control_panel",
-        new StationConstructionControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
-        new Item.Settings());
+    // 车站建设控制面板（不注册为方块，只作为物品使用）
+    // 注意：此方块不注册BlockItem，只注册Block（保留类定义），实际使用Item版本
+    public static final Block STATION_CONSTRUCTION_CONTROL_PANEL = Registry.register(Registries.BLOCK,
+        Identifier.of(RealRailTransitMod.MOD_ID, "station_construction_control_panel"),
+        new StationConstructionControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()));
     
     // ========== 线路设施类 ==========
-    // 线路控制面板
-    public static final Block TRACK_CONTROL_PANEL = registerBlock("track_control_panel",
-        new TrackControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
-        new Item.Settings());
+    // 线路控制面板（不注册为方块，只作为物品使用）
+    // 注意：此方块不注册BlockItem，只注册Block（保留类定义），实际使用Item版本
+    public static final Block TRACK_CONTROL_PANEL = Registry.register(Registries.BLOCK,
+        Identifier.of(RealRailTransitMod.MOD_ID, "track_control_panel"),
+        new TrackControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()));
     
     // 信号铺设器
     public static final Block SIGNAL_LAYOUT_CONTROLLER = registerBlock("signal_layout_controller",

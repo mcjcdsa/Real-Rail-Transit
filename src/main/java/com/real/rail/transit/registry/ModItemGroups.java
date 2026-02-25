@@ -35,7 +35,7 @@ public class ModItemGroups {
                 entries.add(ModBlocks.CONTACT_NETWORK);
                 entries.add(ModBlocks.TRAIN_POWER_SETTING_CONTROLLER);
                 entries.add(ModBlocks.DAOJI_MACHINE);
-                entries.add(ModBlocks.TRACK_CONSTRUCTION_CONTROL_PANEL);
+                entries.add(ModItems.TRACK_CONSTRUCTION_CONTROL_PANEL);
                 entries.add(ModBlocks.CLEANER);
                 
                 // ========== 车站设施类 ==========
@@ -51,10 +51,10 @@ public class ModItemGroups {
                 entries.add(ModBlocks.STATION_RADIO);
                 entries.add(ModBlocks.ELEVATOR_TRACK);
                 entries.add(ModBlocks.ELECTRONIC_DOOR_CONTROLLER);
-                entries.add(ModBlocks.STATION_CONSTRUCTION_CONTROL_PANEL);
+                entries.add(ModItems.STATION_CONSTRUCTION_CONTROL_PANEL);
                 
                 // ========== 线路设施类 ==========
-                entries.add(ModBlocks.TRACK_CONTROL_PANEL);
+                entries.add(ModItems.TRACK_CONTROL_PANEL);
                 entries.add(ModBlocks.SIGNAL_LAYOUT_CONTROLLER);
                 entries.add(ModBlocks.SENSOR_CONTROLLER);
                 entries.add(ModBlocks.SENSOR_LAYOUT_CONTROLLER);

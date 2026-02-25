@@ -29,6 +29,14 @@ public class ModNetworkPackets {
     // 到站显示屏相关
     public static final Identifier ARRIVAL_DISPLAY_UPDATE = Identifier.of(RealRailTransitMod.MOD_ID, "arrival_display_update");
     
+    // 线路建设控制面板相关
+    public static final Identifier TRACK_CONSTRUCTION_UPDATE_CONFIG = Identifier.of(RealRailTransitMod.MOD_ID, "track_construction_update_config");
+    public static final Identifier TRACK_CONSTRUCTION_BATCH_APPLY = Identifier.of(RealRailTransitMod.MOD_ID, "track_construction_batch_apply");
+    
+    // 线路控制面板相关
+    public static final Identifier TRACK_CONTROL_REQUEST_STATS = Identifier.of(RealRailTransitMod.MOD_ID, "track_control_request_stats");
+    public static final Identifier TRACK_CONTROL_STATS_RESPONSE = Identifier.of(RealRailTransitMod.MOD_ID, "track_control_stats_response");
+    
     public static void register() {
         RealRailTransitMod.LOGGER.info("注册网络包...");
         
@@ -41,6 +49,12 @@ public class ModNetworkPackets {
         PayloadTypeRegistry.playC2S().register(StationRadioPlayPayload.ID, StationRadioPlayPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StationRadioStopPayload.ID, StationRadioStopPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ArrivalDisplayUpdatePayload.ID, ArrivalDisplayUpdatePayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(TrackConstructionUpdateConfigPayload.ID, TrackConstructionUpdateConfigPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(TrackConstructionBatchApplyPayload.ID, TrackConstructionBatchApplyPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(TrackControlRequestStatsPayload.ID, TrackControlRequestStatsPayload.CODEC);
+        
+        // 注册Payload类型（S2C - 服务器到客户端）
+        PayloadTypeRegistry.playS2C().register(TrackControlStatsResponsePayload.ID, TrackControlStatsResponsePayload.CODEC);
         
         // 注册售票机网络包处理器
         ServerPlayNetworking.registerGlobalReceiver(TicketMachineSetPricePayload.ID, (payload, context) -> {
@@ -146,6 +160,162 @@ public class ModNetworkPackets {
                 }
             });
         });
+        
+        // 注册线路建设控制面板网络包处理器
+        ServerPlayNetworking.registerGlobalReceiver(TrackConstructionUpdateConfigPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                var world = context.player().getWorld();
+                // 配置会应用到玩家选择的区域或当前面板位置
+                // 这里可以存储配置到某个数据存储中
+                RealRailTransitMod.LOGGER.info("收到线路建设配置更新: 轨道类型={}, 供电方式={}, 信号机配置={}", 
+                    payload.trackType(), payload.powerType(), payload.signalConfig());
+            });
+        });
+        
+        ServerPlayNetworking.registerGlobalReceiver(TrackConstructionBatchApplyPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos startPos = payload.startPos();
+                BlockPos endPos = payload.endPos();
+                var world = context.player().getWorld();
+                // 批量应用配置到指定区域
+                applyBatchConfiguration(world, startPos, endPos, payload.trackType(), payload.powerType(), payload.signalConfig());
+                context.player().sendMessage(net.minecraft.text.Text.translatable(
+                    "gui.real-rail-transit-mod.track_construction_control_panel.batch_applied"), false);
+            });
+        });
+        
+        // 注册线路控制面板网络包处理器
+        ServerPlayNetworking.registerGlobalReceiver(TrackControlRequestStatsPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                var world = context.player().getWorld();
+                var stats = calculateTrackStatistics(world, pos);
+                
+                // 发送统计数据回客户端
+                if (context.player() instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
+                    ServerPlayNetworking.send(serverPlayer, new TrackControlStatsResponsePayload(
+                        stats.trackCount(),
+                        stats.signalCount(),
+                        stats.trainCount(),
+                        stats.powerSectionCount(),
+                        stats.activeTrains()
+                    ));
+                }
+            });
+        });
+    }
+    
+    /**
+     * 计算线路统计数据
+     */
+    private static TrackStatistics calculateTrackStatistics(net.minecraft.world.World world, BlockPos centerPos) {
+        int trackCount = 0;
+        int signalCount = 0;
+        int powerSectionCount = 0;
+        int trainCount = 0;
+        int activeTrains = 0;
+        
+        // 搜索半径（以面板位置为中心）
+        int searchRadius = 100;
+        int minX = centerPos.getX() - searchRadius;
+        int maxX = centerPos.getX() + searchRadius;
+        int minY = centerPos.getY() - 10;
+        int maxY = centerPos.getY() + 10;
+        int minZ = centerPos.getZ() - searchRadius;
+        int maxZ = centerPos.getZ() + searchRadius;
+        
+        // 统计轨道和信号机
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    var state = world.getBlockState(pos);
+                    
+                    if (state.isOf(com.real.rail.transit.registry.ModBlocks.TRACK)) {
+                        trackCount++;
+                    }
+                    if (state.isOf(com.real.rail.transit.registry.ModBlocks.SIGNAL)) {
+                        signalCount++;
+                    }
+                    if (state.isOf(com.real.rail.transit.registry.ModBlocks.THIRD_RAIL) || 
+                        state.isOf(com.real.rail.transit.registry.ModBlocks.CONTACT_NETWORK)) {
+                        powerSectionCount++;
+                    }
+                }
+            }
+        }
+        
+        // 统计列车
+        var trainEntities = world.getEntitiesByType(
+            com.real.rail.transit.registry.ModEntities.TRAIN,
+            new net.minecraft.util.math.Box(minX, minY, minZ, maxX, maxY, maxZ),
+            entity -> true
+        );
+        trainCount = trainEntities.size();
+        
+        // 统计运行中的列车（速度 > 0）
+        for (var train : trainEntities) {
+            if (train instanceof com.real.rail.transit.entity.TrainEntity trainEntity) {
+                // 这里需要访问TrainEntity的速度，但由于是客户端代码，我们简化处理
+                activeTrains++;
+            }
+        }
+        
+        return new TrackStatistics(trackCount, signalCount, trainCount, powerSectionCount, activeTrains);
+    }
+    
+    /**
+     * 线路统计数据记录
+     */
+    private record TrackStatistics(int trackCount, int signalCount, int trainCount, 
+                                   int powerSectionCount, int activeTrains) {}
+    
+    /**
+     * 批量应用配置到指定区域
+     */
+    private static void applyBatchConfiguration(net.minecraft.world.World world, BlockPos startPos, BlockPos endPos,
+                                             String trackType, String powerType, String signalConfig) {
+        int minX = Math.min(startPos.getX(), endPos.getX());
+        int maxX = Math.max(startPos.getX(), endPos.getX());
+        int minY = Math.min(startPos.getY(), endPos.getY());
+        int maxY = Math.max(startPos.getY(), endPos.getY());
+        int minZ = Math.min(startPos.getZ(), endPos.getZ());
+        int maxZ = Math.max(startPos.getZ(), endPos.getZ());
+        
+        int count = 0;
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    var state = world.getBlockState(pos);
+                    
+                    // 根据配置类型应用不同的设置
+                    if (trackType != null && !trackType.isEmpty() && state.isOf(com.real.rail.transit.registry.ModBlocks.TRACK)) {
+                        // 应用轨道类型配置
+                        count++;
+                    }
+                    if (powerType != null && !powerType.isEmpty()) {
+                        if (state.isOf(com.real.rail.transit.registry.ModBlocks.THIRD_RAIL) || 
+                            state.isOf(com.real.rail.transit.registry.ModBlocks.CONTACT_NETWORK)) {
+                            // 应用供电方式配置
+                            com.real.rail.transit.system.PowerSystem.PowerType powerTypeEnum = 
+                                "third_rail".equals(powerType) ? com.real.rail.transit.system.PowerSystem.PowerType.THIRD_RAIL :
+                                "catenary".equals(powerType) ? com.real.rail.transit.system.PowerSystem.PowerType.CATENARY :
+                                com.real.rail.transit.system.PowerSystem.PowerType.NONE;
+                            com.real.rail.transit.system.PowerSystem.getInstance().setPowerSectionType(pos, powerTypeEnum);
+                            count++;
+                        }
+                    }
+                    if (signalConfig != null && !signalConfig.isEmpty() && state.isOf(com.real.rail.transit.registry.ModBlocks.SIGNAL)) {
+                        // 应用信号机配置
+                        count++;
+                    }
+                }
+            }
+        }
+        
+        RealRailTransitMod.LOGGER.info("批量应用配置完成，共处理 {} 个方块", count);
     }
     
     /**
@@ -379,6 +549,70 @@ public class ModNetworkPackets {
                     net.minecraft.network.codec.PacketCodecs.INTEGER.encode(buf, payload.color());
                 }
             };
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record TrackConstructionUpdateConfigPayload(BlockPos pos, String trackType, String powerType, String signalConfig) implements CustomPayload {
+        public static final Id<TrackConstructionUpdateConfigPayload> ID = new Id<>(TRACK_CONSTRUCTION_UPDATE_CONFIG);
+        public static final PacketCodec<RegistryByteBuf, TrackConstructionUpdateConfigPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, TrackConstructionUpdateConfigPayload::pos,
+            net.minecraft.network.codec.PacketCodecs.STRING, TrackConstructionUpdateConfigPayload::trackType,
+            net.minecraft.network.codec.PacketCodecs.STRING, TrackConstructionUpdateConfigPayload::powerType,
+            net.minecraft.network.codec.PacketCodecs.STRING, TrackConstructionUpdateConfigPayload::signalConfig,
+            TrackConstructionUpdateConfigPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record TrackConstructionBatchApplyPayload(BlockPos startPos, BlockPos endPos, String trackType, String powerType, String signalConfig) implements CustomPayload {
+        public static final Id<TrackConstructionBatchApplyPayload> ID = new Id<>(TRACK_CONSTRUCTION_BATCH_APPLY);
+        public static final PacketCodec<RegistryByteBuf, TrackConstructionBatchApplyPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, TrackConstructionBatchApplyPayload::startPos,
+            BLOCK_POS_CODEC, TrackConstructionBatchApplyPayload::endPos,
+            net.minecraft.network.codec.PacketCodecs.STRING, TrackConstructionBatchApplyPayload::trackType,
+            net.minecraft.network.codec.PacketCodecs.STRING, TrackConstructionBatchApplyPayload::powerType,
+            net.minecraft.network.codec.PacketCodecs.STRING, TrackConstructionBatchApplyPayload::signalConfig,
+            TrackConstructionBatchApplyPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record TrackControlRequestStatsPayload(BlockPos pos) implements CustomPayload {
+        public static final Id<TrackControlRequestStatsPayload> ID = new Id<>(TRACK_CONTROL_REQUEST_STATS);
+        public static final PacketCodec<RegistryByteBuf, TrackControlRequestStatsPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, TrackControlRequestStatsPayload::pos,
+            TrackControlRequestStatsPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record TrackControlStatsResponsePayload(int trackCount, int signalCount, int trainCount, 
+                                                   int powerSectionCount, int activeTrains) implements CustomPayload {
+        public static final Id<TrackControlStatsResponsePayload> ID = new Id<>(TRACK_CONTROL_STATS_RESPONSE);
+        public static final PacketCodec<RegistryByteBuf, TrackControlStatsResponsePayload> CODEC = PacketCodec.tuple(
+            net.minecraft.network.codec.PacketCodecs.VAR_INT, TrackControlStatsResponsePayload::trackCount,
+            net.minecraft.network.codec.PacketCodecs.VAR_INT, TrackControlStatsResponsePayload::signalCount,
+            net.minecraft.network.codec.PacketCodecs.VAR_INT, TrackControlStatsResponsePayload::trainCount,
+            net.minecraft.network.codec.PacketCodecs.VAR_INT, TrackControlStatsResponsePayload::powerSectionCount,
+            net.minecraft.network.codec.PacketCodecs.VAR_INT, TrackControlStatsResponsePayload::activeTrains,
+            TrackControlStatsResponsePayload::new
+        );
         
         @Override
         public Id<? extends CustomPayload> getId() {

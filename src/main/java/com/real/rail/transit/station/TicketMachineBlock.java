@@ -15,6 +15,8 @@ import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
@@ -53,11 +55,17 @@ public class TicketMachineBlock extends Block implements BlockEntityProvider {
     }
     
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, 
-                             net.minecraft.util.Hand hand, net.minecraft.util.hit.BlockHitResult hit) {
+                             Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
-            NamedScreenHandlerFactory screenHandlerFactory = state.createScreenHandlerFactory(world, pos);
-            if (screenHandlerFactory != null) {
-                player.openHandledScreen(screenHandlerFactory);
+            try {
+                NamedScreenHandlerFactory screenHandlerFactory = createScreenHandlerFactory(state, world, pos);
+                if (screenHandlerFactory != null) {
+                    player.openHandledScreen(screenHandlerFactory);
+                } else {
+                    com.real.rail.transit.RealRailTransitMod.LOGGER.warn("无法创建售票机GUI：BlockEntity为null或类型不匹配，位置: {}", pos);
+                }
+            } catch (Exception e) {
+                com.real.rail.transit.RealRailTransitMod.LOGGER.error("打开售票机GUI时出错，位置: {}", pos, e);
             }
         }
         return ActionResult.SUCCESS;
@@ -84,6 +92,8 @@ public class TicketMachineBlock extends Block implements BlockEntityProvider {
                 }
             };
         }
+        com.real.rail.transit.RealRailTransitMod.LOGGER.warn("售票机BlockEntity不存在或类型不匹配，位置: {}, BlockEntity类型: {}", 
+            pos, blockEntity != null ? blockEntity.getClass().getName() : "null");
         return null;
     }
 }

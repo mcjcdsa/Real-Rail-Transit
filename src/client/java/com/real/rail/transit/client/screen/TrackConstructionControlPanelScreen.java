@@ -32,6 +32,10 @@ public class TrackConstructionControlPanelScreen extends HandledScreen<TrackCons
     private BlockPos batchStartPos = null;
     private boolean batchMode = false;
     
+    // 滚动相关
+    private int scrollOffset = 0;
+    private static final int SCROLL_SPEED = 20;
+    
     public TrackConstructionControlPanelScreen(TrackConstructionControlPanelScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
     }
@@ -46,47 +50,59 @@ public class TrackConstructionControlPanelScreen extends HandledScreen<TrackCons
         int buttonHeight = 20;
         int spacing = 25;
         
-        // 轨道类型选择按钮
+        // 轨道类型选择按钮（应用滚动偏移）
         trackTypeButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.track_construction_control_panel.track_type." + selectedTrackType),
             button -> cycleTrackType()
-        ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build();
+        ).dimensions(centerX - buttonWidth / 2, startY - scrollOffset, buttonWidth, buttonHeight).build();
         this.addDrawableChild(trackTypeButton);
         
         // 供电方式选择按钮
         powerTypeButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.track_construction_control_panel.power_type." + selectedPowerType),
             button -> cyclePowerType()
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build();
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing - scrollOffset, buttonWidth, buttonHeight).build();
         this.addDrawableChild(powerTypeButton);
         
         // 信号机配置选择按钮
         signalConfigButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.track_construction_control_panel.signal_config." + selectedSignalConfig),
             button -> cycleSignalConfig()
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build();
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2 - scrollOffset, buttonWidth, buttonHeight).build();
         this.addDrawableChild(signalConfigButton);
         
         // 应用配置按钮
         applyButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.track_construction_control_panel.apply"),
             button -> applyConfiguration()
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 3 + 10, buttonWidth, buttonHeight).build();
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 3 + 10 - scrollOffset, buttonWidth, buttonHeight).build();
         this.addDrawableChild(applyButton);
         
         // 批量应用按钮
         batchApplyButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.track_construction_control_panel.batch_apply"),
             button -> toggleBatchMode()
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 4 + 10, buttonWidth, buttonHeight).build();
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 4 + 10 - scrollOffset, buttonWidth, buttonHeight).build();
         this.addDrawableChild(batchApplyButton);
         
-        // 关闭按钮
+        // 关闭按钮（不滚动）
         closeButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.close"),
             button -> this.close()
         ).dimensions(centerX - 50, this.height - 30, 100, 20).build();
         this.addDrawableChild(closeButton);
+    }
+    
+    private void updateButtonPositions() {
+        int centerX = this.width / 2;
+        int startY = 60;
+        int spacing = 25;
+        
+        if (trackTypeButton != null) trackTypeButton.setY(startY - scrollOffset);
+        if (powerTypeButton != null) powerTypeButton.setY(startY + spacing - scrollOffset);
+        if (signalConfigButton != null) signalConfigButton.setY(startY + spacing * 2 - scrollOffset);
+        if (applyButton != null) applyButton.setY(startY + spacing * 3 + 10 - scrollOffset);
+        if (batchApplyButton != null) batchApplyButton.setY(startY + spacing * 4 + 10 - scrollOffset);
     }
     
     private void cycleTrackType() {
@@ -181,8 +197,13 @@ public class TrackConstructionControlPanelScreen extends HandledScreen<TrackCons
             0xFFFFFF
         );
         
-        // 绘制标签
-        int labelY = 45;
+        // 使用scissor来裁剪超出屏幕的内容
+        int scissorY = 40;
+        int scissorHeight = this.height - 100;
+        context.enableScissor(0, scissorY, this.width, scissorY + scissorHeight);
+        
+        // 绘制标签（应用滚动偏移）
+        int labelY = 45 - scrollOffset;
         context.drawText(
             this.textRenderer,
             Text.translatable("gui.real-rail-transit-mod.track_construction_control_panel.track_type.label"),
@@ -210,7 +231,9 @@ public class TrackConstructionControlPanelScreen extends HandledScreen<TrackCons
             false
         );
         
-        // 绘制批量操作提示
+        context.disableScissor();
+        
+        // 绘制批量操作提示（不滚动）
         if (batchMode) {
             context.drawCenteredTextWithShadow(
                 this.textRenderer,
@@ -220,6 +243,18 @@ public class TrackConstructionControlPanelScreen extends HandledScreen<TrackCons
                 0xFFFF00
             );
         }
+    }
+    
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        // 处理滚动事件（允许在整个屏幕范围内滚动）
+        if (verticalAmount != 0) {
+            scrollOffset -= (int) (verticalAmount * SCROLL_SPEED);
+            scrollOffset = Math.max(0, scrollOffset);
+            updateButtonPositions();
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
     
     @Override

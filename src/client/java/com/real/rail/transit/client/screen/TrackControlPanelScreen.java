@@ -28,6 +28,11 @@ public class TrackControlPanelScreen extends HandledScreen<TrackControlPanelScre
     private ButtonWidget refreshButton;
     private ButtonWidget closeButton;
     
+    // 滚动相关
+    private int scrollOffset = 0;
+    private int contentHeight = 0;
+    private static final int SCROLL_SPEED = 20;
+    
     public TrackControlPanelScreen(TrackControlPanelScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
         
@@ -100,7 +105,19 @@ public class TrackControlPanelScreen extends HandledScreen<TrackControlPanelScre
         int startY = 50;
         int lineHeight = 20;
         
-        // 绘制标题
+        // 计算内容总高度
+        contentHeight = 300; // 估算内容高度
+        
+        // 限制滚动范围
+        int maxScroll = Math.max(0, contentHeight - (this.height - 100));
+        scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
+        
+        // 使用scissor来裁剪超出屏幕的内容
+        int scissorY = 40;
+        int scissorHeight = this.height - 100;
+        context.enableScissor(0, scissorY, this.width, scissorY + scissorHeight);
+        
+        // 绘制标题（不滚动）
         context.drawCenteredTextWithShadow(
             this.textRenderer,
             Text.translatable("gui.real-rail-transit-mod.track_control_panel.title"),
@@ -109,8 +126,8 @@ public class TrackControlPanelScreen extends HandledScreen<TrackControlPanelScre
             0xFFFFFF
         );
         
-        // 绘制线路统计信息
-        int y = startY;
+        // 绘制线路统计信息（应用滚动偏移）
+        int y = startY - scrollOffset;
         context.drawText(
             this.textRenderer,
             Text.translatable("gui.real-rail-transit-mod.track_control_panel.stats.title"),
@@ -182,7 +199,7 @@ public class TrackControlPanelScreen extends HandledScreen<TrackControlPanelScre
         }
         
         // 绘制信号机状态标题
-        y = startY + 150;
+        y = startY + 150 - scrollOffset;
         context.drawText(
             this.textRenderer,
             Text.translatable("gui.real-rail-transit-mod.track_control_panel.signal_status.title"),
@@ -214,7 +231,7 @@ public class TrackControlPanelScreen extends HandledScreen<TrackControlPanelScre
         }
         
         // 绘制列车运行状态标题
-        y = startY + 220;
+        y = startY + 220 - scrollOffset;
         context.drawText(
             this.textRenderer,
             Text.translatable("gui.real-rail-transit-mod.track_control_panel.train_status.title"),
@@ -246,6 +263,51 @@ public class TrackControlPanelScreen extends HandledScreen<TrackControlPanelScre
                 );
             }
         }
+        
+        context.disableScissor();
+        
+        // 绘制滚动条（如果需要）
+        if (maxScroll > 0) {
+            drawScrollBar(context, centerX + 160, scissorY, scissorHeight, maxScroll);
+        }
+    }
+    
+    private void drawScrollBar(DrawContext context, int x, int y, int height, int maxScroll) {
+        // 绘制滚动条背景
+        context.fill(x, y, x + 4, y + height, 0x80000000);
+        
+        // 计算滚动条滑块位置和大小
+        float scrollRatio = scrollOffset / (float) maxScroll;
+        int thumbHeight = Math.max(20, (int) (height * (height / (float) (contentHeight + height))));
+        int thumbY = y + (int) (scrollRatio * (height - thumbHeight));
+        
+        // 绘制滚动条滑块
+        context.fill(x, thumbY, x + 4, thumbY + thumbHeight, 0xFF808080);
+    }
+    
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        // 检查鼠标是否在可滚动区域内（排除标题和按钮区域）
+        int scissorY = 40;
+        int scissorHeight = this.height - 100;
+        if (mouseY >= scissorY && mouseY <= scissorY + scissorHeight && mouseX >= 0 && mouseX <= this.width) {
+            if (verticalAmount != 0) {
+                scrollOffset -= (int) (verticalAmount * SCROLL_SPEED);
+                int maxScroll = Math.max(0, contentHeight - (this.height - 100));
+                scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
+                return true;
+            }
+        }
+        // 即使不在滚动区域，也尝试处理滚动事件（但只在有内容需要滚动时）
+        if (verticalAmount != 0) {
+            int maxScroll = Math.max(0, contentHeight - (this.height - 100));
+            if (maxScroll > 0) {
+                scrollOffset -= (int) (verticalAmount * SCROLL_SPEED);
+                scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
     
     @Override

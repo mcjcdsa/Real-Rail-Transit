@@ -22,6 +22,11 @@ public class TicketMachineBlockEntity extends BlockEntity {
     private int ticketCount = 0; // 已售出票数
     private boolean isWorking = true;
     
+    // 购票状态
+    private String selectedDestination = ""; // 选中的目的地
+    private int insertedEmeralds = 0; // 已投入的绿宝石数量
+    private java.util.UUID currentBuyer = null; // 当前购票的玩家UUID
+    
     public static void register() {
         TYPE = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
@@ -61,12 +66,56 @@ public class TicketMachineBlockEntity extends BlockEntity {
         this.markDirty();
     }
     
+    public String getSelectedDestination() {
+        return selectedDestination;
+    }
+    
+    public void setSelectedDestination(String destination) {
+        this.selectedDestination = destination;
+        this.markDirty();
+    }
+    
+    public int getInsertedEmeralds() {
+        return insertedEmeralds;
+    }
+    
+    public void setInsertedEmeralds(int amount) {
+        this.insertedEmeralds = amount;
+        this.markDirty();
+    }
+    
+    public void addEmeralds(int amount) {
+        this.insertedEmeralds += amount;
+        this.markDirty();
+    }
+    
+    public void resetPurchase() {
+        this.selectedDestination = "";
+        this.insertedEmeralds = 0;
+        this.currentBuyer = null;
+        this.markDirty();
+    }
+    
+    public java.util.UUID getCurrentBuyer() {
+        return currentBuyer;
+    }
+    
+    public void setCurrentBuyer(java.util.UUID buyer) {
+        this.currentBuyer = buyer;
+        this.markDirty();
+    }
+    
     @Override
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         super.writeNbt(nbt, registries);
         nbt.putInt("ticketPrice", ticketPrice);
         nbt.putInt("ticketCount", ticketCount);
         nbt.putBoolean("isWorking", isWorking);
+        nbt.putString("selectedDestination", selectedDestination);
+        nbt.putInt("insertedEmeralds", insertedEmeralds);
+        if (currentBuyer != null) {
+            nbt.putUuid("currentBuyer", currentBuyer);
+        }
     }
     
     @Override
@@ -80,6 +129,15 @@ public class TicketMachineBlockEntity extends BlockEntity {
         }
         if (nbt.contains("isWorking")) {
             isWorking = nbt.getBoolean("isWorking");
+        }
+        if (nbt.contains("selectedDestination")) {
+            selectedDestination = nbt.getString("selectedDestination");
+        }
+        if (nbt.contains("insertedEmeralds")) {
+            insertedEmeralds = nbt.getInt("insertedEmeralds");
+        }
+        if (nbt.containsUuid("currentBuyer")) {
+            currentBuyer = nbt.getUuid("currentBuyer");
         }
     }
 }

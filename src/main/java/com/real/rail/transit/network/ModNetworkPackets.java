@@ -37,6 +37,12 @@ public class ModNetworkPackets {
     public static final Identifier TRACK_CONTROL_REQUEST_STATS = Identifier.of(RealRailTransitMod.MOD_ID, "track_control_request_stats");
     public static final Identifier TRACK_CONTROL_STATS_RESPONSE = Identifier.of(RealRailTransitMod.MOD_ID, "track_control_stats_response");
     
+    // 车站建设控制面板相关
+    public static final Identifier STATION_CONSTRUCTION_SELECT_FACILITY = Identifier.of(RealRailTransitMod.MOD_ID, "station_construction_select_facility");
+    public static final Identifier STATION_CONSTRUCTION_CONFIG_SHIELD_DOOR = Identifier.of(RealRailTransitMod.MOD_ID, "station_construction_config_shield_door");
+    public static final Identifier STATION_CONSTRUCTION_CONFIG_DISPLAY = Identifier.of(RealRailTransitMod.MOD_ID, "station_construction_config_display");
+    public static final Identifier STATION_CONSTRUCTION_BATCH_APPLY = Identifier.of(RealRailTransitMod.MOD_ID, "station_construction_batch_apply");
+    
     public static void register() {
         RealRailTransitMod.LOGGER.info("注册网络包...");
         
@@ -52,6 +58,10 @@ public class ModNetworkPackets {
         PayloadTypeRegistry.playC2S().register(TrackConstructionUpdateConfigPayload.ID, TrackConstructionUpdateConfigPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(TrackConstructionBatchApplyPayload.ID, TrackConstructionBatchApplyPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(TrackControlRequestStatsPayload.ID, TrackControlRequestStatsPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(StationConstructionSelectFacilityPayload.ID, StationConstructionSelectFacilityPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(StationConstructionConfigShieldDoorPayload.ID, StationConstructionConfigShieldDoorPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(StationConstructionConfigDisplayPayload.ID, StationConstructionConfigDisplayPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(StationConstructionBatchApplyPayload.ID, StationConstructionBatchApplyPayload.CODEC);
         
         // 注册Payload类型（S2C - 服务器到客户端）
         PayloadTypeRegistry.playS2C().register(TrackControlStatsResponsePayload.ID, TrackControlStatsResponsePayload.CODEC);
@@ -204,6 +214,58 @@ public class ModNetworkPackets {
                 }
             });
         });
+        
+        // 注册车站建设控制面板网络包处理器
+        ServerPlayNetworking.registerGlobalReceiver(StationConstructionConfigShieldDoorPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                boolean isUpper = payload.isUpper();
+                var world = context.player().getWorld();
+                var state = world.getBlockState(pos);
+                
+                if (state.getBlock() instanceof com.real.rail.transit.station.ShieldDoorBlock) {
+                    world.setBlockState(pos, state.with(com.real.rail.transit.station.ShieldDoorBlock.IS_UPPER, isUpper));
+                    context.player().sendMessage(net.minecraft.text.Text.translatable(
+                        "gui.real-rail-transit-mod.station_construction_control_panel.shield_door_configured",
+                        isUpper ? net.minecraft.text.Text.translatable("gui.real-rail-transit-mod.station_construction_control_panel.shield_door_type.upper")
+                                : net.minecraft.text.Text.translatable("gui.real-rail-transit-mod.station_construction_control_panel.shield_door_type.lower")
+                    ), false);
+                }
+            });
+        });
+        
+        ServerPlayNetworking.registerGlobalReceiver(StationConstructionConfigDisplayPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                var world = context.player().getWorld();
+                var blockEntity = world.getBlockEntity(pos);
+                
+                if (blockEntity instanceof com.real.rail.transit.station.entity.DisplayScreenBlockEntity displayEntity) {
+                    if (payload.text() != null) displayEntity.setDisplayText(payload.text());
+                    if (payload.color() != null) displayEntity.setTextColor(payload.color());
+                    if (payload.scale() != null) displayEntity.setTextScale(payload.scale());
+                    context.player().sendMessage(net.minecraft.text.Text.translatable(
+                        "gui.real-rail-transit-mod.station_construction_control_panel.display_configured"
+                    ), false);
+                }
+            });
+        });
+        
+        ServerPlayNetworking.registerGlobalReceiver(StationConstructionBatchApplyPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                int count = applyStationBatchConfiguration(
+                    context.player().getWorld(),
+                    payload.startPos(),
+                    payload.endPos(),
+                    payload.facilityType(),
+                    payload.config()
+                );
+                context.player().sendMessage(net.minecraft.text.Text.translatable(
+                    "gui.real-rail-transit-mod.station_construction_control_panel.batch_applied",
+                    count
+                ), false);
+            });
+        });
     }
     
     /**
@@ -270,6 +332,56 @@ public class ModNetworkPackets {
      */
     private record TrackStatistics(int trackCount, int signalCount, int trainCount, 
                                    int powerSectionCount, int activeTrains) {}
+    
+    /**
+     * 批量应用车站设施配置
+     */
+    private static int applyStationBatchConfiguration(net.minecraft.world.World world, BlockPos startPos, BlockPos endPos,
+                                                     String facilityType, String config) {
+        int minX = Math.min(startPos.getX(), endPos.getX());
+        int maxX = Math.max(startPos.getX(), endPos.getX());
+        int minY = Math.min(startPos.getY(), endPos.getY());
+        int maxY = Math.max(startPos.getY(), endPos.getY());
+        int minZ = Math.min(startPos.getZ(), endPos.getZ());
+        int maxZ = Math.max(startPos.getZ(), endPos.getZ());
+        
+        int count = 0;
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    var state = world.getBlockState(pos);
+                    var blockEntity = world.getBlockEntity(pos);
+                    
+                    if ("shield_door".equals(facilityType) && state.getBlock() instanceof com.real.rail.transit.station.ShieldDoorBlock) {
+                        boolean isUpper = "upper".equals(config);
+                        world.setBlockState(pos, state.with(com.real.rail.transit.station.ShieldDoorBlock.IS_UPPER, isUpper));
+                        count++;
+                    } else if ("display_screen".equals(facilityType) && blockEntity instanceof com.real.rail.transit.station.entity.DisplayScreenBlockEntity displayEntity) {
+                        // 解析配置：格式为 "text|color|scale"
+                        String[] parts = config.split("\\|");
+                        if (parts.length > 0 && !parts[0].isEmpty()) displayEntity.setDisplayText(parts[0]);
+                        if (parts.length > 1 && !parts[1].isEmpty()) {
+                            try {
+                                displayEntity.setTextColor(Integer.parseInt(parts[1], 16) | 0xFF000000);
+                            } catch (NumberFormatException e) {
+                                // 忽略无效颜色
+                            }
+                        }
+                        if (parts.length > 2 && !parts[2].isEmpty()) {
+                            try {
+                                displayEntity.setTextScale(Float.parseFloat(parts[2]));
+                            } catch (NumberFormatException e) {
+                                // 忽略无效缩放
+                            }
+                        }
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
     
     /**
      * 批量应用配置到指定区域
@@ -355,11 +467,27 @@ public class ModNetworkPackets {
             }
         }
         
-        // 给予车票（使用纸作为车票）
-        var ticketStack = new net.minecraft.item.ItemStack(net.minecraft.item.Items.PAPER, 1);
-        ticketStack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME, 
-            net.minecraft.text.Text.translatable("item.real-rail-transit-mod.ticket"));
-        player.getInventory().offerOrDrop(ticketStack);
+        // 生成票卡物品并"吐出"（在售票机位置生成掉落物）
+        var ticketStack = new net.minecraft.item.ItemStack(com.real.rail.transit.registry.ModItems.TICKET_CARD, 1);
+        
+        // 在售票机前方生成掉落物（模拟"吐出"效果）
+        net.minecraft.util.math.BlockPos machinePos = ticketEntity.getPos();
+        net.minecraft.util.math.Vec3d dropPos = net.minecraft.util.math.Vec3d.ofCenter(machinePos).add(0, 0.5, 0);
+        
+        // 根据玩家位置决定票卡掉落方向
+        net.minecraft.util.math.Vec3d playerPos = player.getPos();
+        net.minecraft.util.math.Vec3d direction = playerPos.subtract(dropPos).normalize();
+        dropPos = dropPos.add(direction.multiply(0.5)); // 在售票机前方0.5格处掉落
+        
+        net.minecraft.entity.ItemEntity itemEntity = new net.minecraft.entity.ItemEntity(
+            player.getWorld(),
+            dropPos.x, dropPos.y, dropPos.z,
+            ticketStack
+        );
+        itemEntity.setPickupDelay(10); // 0.5秒后才能拾取
+        itemEntity.setVelocity(direction.multiply(0.2)); // 给票卡一个向外的速度
+        
+        player.getWorld().spawnEntity(itemEntity);
         
         // 增加售票计数
         ticketEntity.incrementTicketCount();
@@ -612,6 +740,65 @@ public class ModNetworkPackets {
             net.minecraft.network.codec.PacketCodecs.VAR_INT, TrackControlStatsResponsePayload::powerSectionCount,
             net.minecraft.network.codec.PacketCodecs.VAR_INT, TrackControlStatsResponsePayload::activeTrains,
             TrackControlStatsResponsePayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record StationConstructionSelectFacilityPayload(String facilityType) implements CustomPayload {
+        public static final Id<StationConstructionSelectFacilityPayload> ID = new Id<>(STATION_CONSTRUCTION_SELECT_FACILITY);
+        public static final PacketCodec<RegistryByteBuf, StationConstructionSelectFacilityPayload> CODEC = PacketCodec.tuple(
+            net.minecraft.network.codec.PacketCodecs.STRING, StationConstructionSelectFacilityPayload::facilityType,
+            StationConstructionSelectFacilityPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record StationConstructionConfigShieldDoorPayload(BlockPos pos, boolean isUpper) implements CustomPayload {
+        public static final Id<StationConstructionConfigShieldDoorPayload> ID = new Id<>(STATION_CONSTRUCTION_CONFIG_SHIELD_DOOR);
+        public static final PacketCodec<RegistryByteBuf, StationConstructionConfigShieldDoorPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, StationConstructionConfigShieldDoorPayload::pos,
+            net.minecraft.network.codec.PacketCodecs.BOOL, StationConstructionConfigShieldDoorPayload::isUpper,
+            StationConstructionConfigShieldDoorPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record StationConstructionConfigDisplayPayload(BlockPos pos, String text, Integer color, Float scale) implements CustomPayload {
+        public static final Id<StationConstructionConfigDisplayPayload> ID = new Id<>(STATION_CONSTRUCTION_CONFIG_DISPLAY);
+        public static final PacketCodec<RegistryByteBuf, StationConstructionConfigDisplayPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, StationConstructionConfigDisplayPayload::pos,
+            net.minecraft.network.codec.PacketCodecs.STRING, StationConstructionConfigDisplayPayload::text,
+            net.minecraft.network.codec.PacketCodecs.INTEGER, StationConstructionConfigDisplayPayload::color,
+            net.minecraft.network.codec.PacketCodecs.FLOAT, StationConstructionConfigDisplayPayload::scale,
+            StationConstructionConfigDisplayPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record StationConstructionBatchApplyPayload(BlockPos startPos, BlockPos endPos, String facilityType, String config) implements CustomPayload {
+        public static final Id<StationConstructionBatchApplyPayload> ID = new Id<>(STATION_CONSTRUCTION_BATCH_APPLY);
+        public static final PacketCodec<RegistryByteBuf, StationConstructionBatchApplyPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, StationConstructionBatchApplyPayload::startPos,
+            BLOCK_POS_CODEC, StationConstructionBatchApplyPayload::endPos,
+            net.minecraft.network.codec.PacketCodecs.STRING, StationConstructionBatchApplyPayload::facilityType,
+            net.minecraft.network.codec.PacketCodecs.STRING, StationConstructionBatchApplyPayload::config,
+            StationConstructionBatchApplyPayload::new
         );
         
         @Override

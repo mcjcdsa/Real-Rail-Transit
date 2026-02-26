@@ -6,6 +6,7 @@ import com.real.rail.transit.item.SettingControllerItem;
 import com.real.rail.transit.item.ShieldDoorKeyItem;
 import com.real.rail.transit.item.StationBrushItem;
 import com.real.rail.transit.item.StationConstructionControlPanelItem;
+import com.real.rail.transit.item.TicketCardItem;
 import com.real.rail.transit.item.TrackBrushItem;
 import com.real.rail.transit.item.TrackConstructionControlPanelItem;
 import com.real.rail.transit.item.TrackControlPanelItem;
@@ -49,6 +50,10 @@ public class ModItems {
     // 线路控制面板（只能右键打开GUI，不能放置）
     public static final Item TRACK_CONTROL_PANEL = registerItem("track_control_panel",
         new TrackControlPanelItem(new Item.Settings()));
+    
+    // 票卡（用于刷闸机进站，不能放置）
+    public static final Item TICKET_CARD = registerItem("ticket_card",
+        new TicketCardItem(new Item.Settings().maxCount(64)));
     
     /**
      * 注册物品

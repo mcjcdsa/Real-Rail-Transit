@@ -21,6 +21,10 @@ public class DisplayScreenScreen extends HandledScreen<DisplayScreenHandler> {
     private ButtonWidget saveButton;
     private DisplayScreenBlockEntity blockEntity;
     
+    // 滚动相关
+    private int scrollOffset = 0;
+    private static final int SCROLL_SPEED = 20;
+    
     public DisplayScreenScreen(DisplayScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
         this.blockEntity = handler.getBlockEntity();
@@ -132,21 +136,49 @@ public class DisplayScreenScreen extends HandledScreen<DisplayScreenHandler> {
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
         int centerX = this.width / 2;
+        int centerY = this.height / 2;
         
-        // 绘制标题
+        // 使用scissor来裁剪超出屏幕的内容
+        int scissorY = 40;
+        int scissorHeight = this.height - 100;
+        context.enableScissor(0, scissorY, this.width, scissorY + scissorHeight);
+        
+        // 绘制标题（应用滚动偏移）
         String title = Text.translatable("gui.real-rail-transit-mod.display_screen.title").getString();
         int titleWidth = this.textRenderer.getWidth(title);
-        context.drawText(this.textRenderer, title, centerX - titleWidth / 2, this.height / 2 - 50, 0xFFFFFF, false);
+        context.drawText(this.textRenderer, title, centerX - titleWidth / 2, centerY - 50 - scrollOffset, 0xFFFFFF, false);
         
-        // 绘制标签
+        // 绘制标签（应用滚动偏移）
         String textLabel = Text.translatable("gui.real-rail-transit-mod.display_screen.text_label").getString();
-        context.drawText(this.textRenderer, textLabel, centerX - 150, this.height / 2 - 95, 0xCCCCCC, false);
+        context.drawText(this.textRenderer, textLabel, centerX - 150, centerY - 95 - scrollOffset, 0xCCCCCC, false);
         
         String colorLabel = Text.translatable("gui.real-rail-transit-mod.display_screen.color_label").getString();
-        context.drawText(this.textRenderer, colorLabel, centerX - 150, this.height / 2 + 15, 0xCCCCCC, false);
+        context.drawText(this.textRenderer, colorLabel, centerX - 150, centerY + 15 - scrollOffset, 0xCCCCCC, false);
         
         String scaleLabel = Text.translatable("gui.real-rail-transit-mod.display_screen.scale_label").getString();
-        context.drawText(this.textRenderer, scaleLabel, centerX + 10, this.height / 2 + 15, 0xCCCCCC, false);
+        context.drawText(this.textRenderer, scaleLabel, centerX + 10, centerY + 15 - scrollOffset, 0xCCCCCC, false);
+        
+        context.disableScissor();
+    }
+    
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        // 处理滚动事件（允许在整个屏幕范围内滚动）
+        if (verticalAmount != 0) {
+            scrollOffset -= (int) (verticalAmount * SCROLL_SPEED);
+            scrollOffset = Math.max(0, scrollOffset);
+            
+            // 更新组件位置
+            int centerX = this.width / 2;
+            int centerY = this.height / 2;
+            if (textField != null) textField.setY(centerY - 40 - scrollOffset);
+            if (colorField != null) colorField.setY(centerY + 30 - scrollOffset);
+            if (scaleField != null) scaleField.setY(centerY + 30 - scrollOffset);
+            if (saveButton != null) saveButton.setY(centerY + 60 - scrollOffset);
+            
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
     
     @Override

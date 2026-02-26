@@ -76,6 +76,7 @@ public class ModItemGroups {
                 entries.add(ModItems.STATION_BRUSH);
                 entries.add(ModItems.SETTING_CONTROLLER);
                 entries.add(ModItems.SHIELD_DOOR_KEY);
+                entries.add(ModItems.TICKET_CARD);
             })
             .build()
     );

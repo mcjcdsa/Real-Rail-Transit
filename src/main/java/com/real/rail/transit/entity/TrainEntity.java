@@ -19,23 +19,44 @@ public class TrainEntity extends Entity {
     private double maxSpeed = 97.2; // 最高速度 (m/s, 约350 km/h)
     private double acceleration = 0.8; // 加速度 (m/s²)
     private double deceleration = 1.2; // 减速度 (m/s²)
+    private boolean engineOn = false; // 引擎是否开启
     
     // 驾驶模式
     private DrivingMode drivingMode = DrivingMode.MANUAL;
     
     // 制动状态
     private BrakeState brakeState = BrakeState.NORMAL;
+
+    // 设备状态（参考中国地铁驾驶室标准）
+    private boolean headlightOn = false;
+    private boolean headlightDim = false;
+    private boolean cabLightOn = true;
+    private boolean passengerLightOn = true;
+    private boolean pantographUp = true;
+    private Direction direction = Direction.FORWARD;
+
+    /**
+     * 行驶方向枚举
+     */
+    public enum Direction {
+        FORWARD,   // 前进
+        NEUTRAL,   // 零位
+        BACKWARD   // 后退
+    }
     
     /**
-     * 驾驶模式枚举
+     * 驾驶模式枚举（参考 GB/T 7928 及中国地铁标准）
      */
     public enum DrivingMode {
         ATO,      // 自动驾驶模式
+        ATB,      // 自动折返模式
+        IATP,     // 点式 ATP 模式
         CBTC,     // 基于通信的列车控制
         ATP,      // 列车自动防护
         ATC,      // 列车自动控制
-        RM,       // 限制人工驾驶
-        MANUAL    // 手动模式
+        RM,       // 限制人工驾驶（最高 25 km/h）
+        MANUAL,   // 手动模式
+        OFF       // 关闭保护模式（极端情况）
     }
     
     /**
@@ -61,8 +82,26 @@ public class TrainEntity extends Entity {
         // 从NBT读取数据
         this.currentSpeed = nbt.getDouble("currentSpeed");
         this.maxSpeed = nbt.getDouble("maxSpeed");
-        this.drivingMode = DrivingMode.valueOf(nbt.getString("drivingMode"));
-        this.brakeState = BrakeState.valueOf(nbt.getString("brakeState"));
+        String mode = nbt.getString("drivingMode");
+        if (!mode.isEmpty()) {
+            this.drivingMode = DrivingMode.valueOf(mode);
+        }
+        String brake = nbt.getString("brakeState");
+        if (!brake.isEmpty()) {
+            this.brakeState = BrakeState.valueOf(brake);
+        }
+        this.engineOn = nbt.getBoolean("engineOn");
+        this.headlightOn = nbt.getBoolean("headlightOn");
+        this.headlightDim = nbt.getBoolean("headlightDim");
+        this.cabLightOn = nbt.getBoolean("cabLightOn");
+        this.passengerLightOn = nbt.getBoolean("passengerLightOn");
+        this.pantographUp = nbt.getBoolean("pantographUp");
+        String dir = nbt.getString("direction");
+        if (!dir.isEmpty()) {
+            try {
+                this.direction = Direction.valueOf(dir);
+            } catch (IllegalArgumentException ignored) {}
+        }
     }
     
     @Override
@@ -72,6 +111,13 @@ public class TrainEntity extends Entity {
         nbt.putDouble("maxSpeed", this.maxSpeed);
         nbt.putString("drivingMode", this.drivingMode.name());
         nbt.putString("brakeState", this.brakeState.name());
+        nbt.putBoolean("engineOn", this.engineOn);
+        nbt.putBoolean("headlightOn", this.headlightOn);
+        nbt.putBoolean("headlightDim", this.headlightDim);
+        nbt.putBoolean("cabLightOn", this.cabLightOn);
+        nbt.putBoolean("passengerLightOn", this.passengerLightOn);
+        nbt.putBoolean("pantographUp", this.pantographUp);
+        nbt.putString("direction", this.direction.name());
     }
     
     @Override
@@ -90,9 +136,22 @@ public class TrainEntity extends Entity {
      * 更新列车移动
      */
     private void updateMovement() {
+        if (!this.engineOn) {
+            // 引擎未开启，仅允许自然减速到 0
+            if (this.currentSpeed > 0) {
+                this.currentSpeed = Math.max(0, this.currentSpeed - this.deceleration * 0.05);
+                if (this.currentSpeed > 0) {
+                    Vec3d movement = this.getRotationVector().multiply(this.currentSpeed * 0.05);
+                    this.move(MovementType.SELF, movement);
+                }
+            }
+            return;
+        }
+        
         // 根据驾驶模式和制动状态计算速度变化
         double speedChange = calculateSpeedChange();
-        this.currentSpeed = Math.max(0, Math.min(this.maxSpeed, this.currentSpeed + speedChange));
+        double effectiveMaxSpeed = (this.drivingMode == DrivingMode.RM) ? (25.0 / 3.6) : this.maxSpeed; // RM 模式限速 25 km/h
+        this.currentSpeed = Math.max(0, Math.min(effectiveMaxSpeed, this.currentSpeed + speedChange));
         
         // 应用移动
         if (this.currentSpeed > 0) {
@@ -120,6 +179,8 @@ public class TrainEntity extends Entity {
                 
                 // 根据驾驶模式决定加速或减速
                 if (this.drivingMode == DrivingMode.ATO || 
+                    this.drivingMode == DrivingMode.ATB ||
+                    this.drivingMode == DrivingMode.IATP ||
                     this.drivingMode == DrivingMode.ATC ||
                     this.drivingMode == DrivingMode.CBTC) {
                     // 自动模式：自动调整速度到目标速度
@@ -146,7 +207,8 @@ public class TrainEntity extends Entity {
      * 设置目标速度
      */
     public void setTargetSpeed(double speed) {
-        this.targetSpeed = Math.max(0, Math.min(speed, this.maxSpeed));
+        double effectiveMaxSpeed = (this.drivingMode == DrivingMode.RM) ? (25.0 / 3.6) : this.maxSpeed;
+        this.targetSpeed = Math.max(0, Math.min(speed, effectiveMaxSpeed));
     }
     
     /**
@@ -161,6 +223,15 @@ public class TrainEntity extends Entity {
      */
     public void triggerEmergencyBrake() {
         this.brakeState = BrakeState.EMERGENCY;
+    }
+
+    /**
+     * 缓解紧急制动（需列车停稳后操作）
+     */
+    public void releaseEmergencyBrake() {
+        if (this.currentSpeed < 0.1) {
+            this.brakeState = BrakeState.NORMAL;
+        }
     }
     
     /**
@@ -182,6 +253,20 @@ public class TrainEntity extends Entity {
      */
     public void setDrivingMode(DrivingMode mode) {
         this.drivingMode = mode;
+    }
+    
+    /**
+     * 获取引擎是否开启
+     */
+    public boolean isEngineOn() {
+        return this.engineOn;
+    }
+    
+    /**
+     * 设置引擎状态
+     */
+    public void setEngineOn(boolean engineOn) {
+        this.engineOn = engineOn;
     }
     
     private String trainId = "";
@@ -220,5 +305,18 @@ public class TrainEntity extends Entity {
     public void setBrakeState(BrakeState brakeState) {
         this.brakeState = brakeState;
     }
+
+    public boolean isHeadlightOn() { return headlightOn; }
+    public void setHeadlightOn(boolean on) { this.headlightOn = on; }
+    public boolean isHeadlightDim() { return headlightDim; }
+    public void setHeadlightDim(boolean dim) { this.headlightDim = dim; }
+    public boolean isCabLightOn() { return cabLightOn; }
+    public void setCabLightOn(boolean on) { this.cabLightOn = on; }
+    public boolean isPassengerLightOn() { return passengerLightOn; }
+    public void setPassengerLightOn(boolean on) { this.passengerLightOn = on; }
+    public boolean isPantographUp() { return pantographUp; }
+    public void setPantographUp(boolean up) { this.pantographUp = up; }
+    public Direction getDirection() { return direction; }
+    public void setDirection(Direction d) { this.direction = d; }
 }
 

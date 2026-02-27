@@ -2,6 +2,7 @@ package com.real.rail.transit.client.screen;
 
 import com.real.rail.transit.block.screen.TrackConstructionControlPanelScreenHandler;
 import com.real.rail.transit.block.screen.TrackControlPanelScreenHandler;
+import com.real.rail.transit.block.screen.TrainPanelScreenHandler;
 import com.real.rail.transit.station.screen.ArrivalDisplayScreenHandler;
 import com.real.rail.transit.station.screen.DisplayScreenHandler;
 import com.real.rail.transit.station.screen.StationConstructionControlPanelScreenHandler;
@@ -22,6 +23,7 @@ public class ModScreens {
         HandledScreens.register(TrackConstructionControlPanelScreenHandler.TYPE, TrackConstructionControlPanelScreen::new);
         HandledScreens.register(StationConstructionControlPanelScreenHandler.TYPE, StationConstructionControlPanelScreen::new);
         HandledScreens.register(TrackControlPanelScreenHandler.TYPE, TrackControlPanelScreen::new);
+        HandledScreens.register(TrainPanelScreenHandler.TYPE, TrainPanelScreen::new);
     }
 }
 

@@ -1,5 +1,7 @@
 package com.real.rail.transit.item;
 
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -26,19 +28,19 @@ public class TicketCardItem extends Item {
      */
     public static void setDestination(ItemStack stack, String destination) {
         // 使用CustomData组件存储NBT数据
-        var customData = stack.get(net.minecraft.component.DataComponentTypes.CUSTOM_DATA);
+        var customData = stack.get(DataComponentTypes.CUSTOM_DATA);
         NbtCompound nbt = customData != null ? customData.copyNbt() : new NbtCompound();
         nbt.putString("destination", destination);
-        // 创建CustomData组件 - 使用正确的API
-        var newCustomData = net.minecraft.component.types.CustomData.of(nbt);
-        stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_DATA, newCustomData);
+        // 创建 NbtComponent 组件并写回到物品
+        var newCustomData = NbtComponent.of(nbt);
+        stack.set(DataComponentTypes.CUSTOM_DATA, newCustomData);
     }
     
     /**
      * 获取票卡的目的地
      */
     public static String getDestination(ItemStack stack) {
-        var customData = stack.get(net.minecraft.component.DataComponentTypes.CUSTOM_DATA);
+        var customData = stack.get(DataComponentTypes.CUSTOM_DATA);
         if (customData != null) {
             NbtCompound nbt = customData.copyNbt();
             if (nbt != null && nbt.contains("destination")) {

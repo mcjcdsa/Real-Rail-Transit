@@ -1,5 +1,9 @@
 package com.real.rail.transit.system;
 
+import com.real.rail.transit.block.ContactNetworkBlock;
+import com.real.rail.transit.block.ThirdRailBlock;
+import com.real.rail.transit.registry.ModBlocks;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -48,7 +52,18 @@ public class PowerSystem {
      */
     public void setPowerState(World world, BlockPos pos, boolean powered) {
         powerStates.put(pos, powered);
-        // TODO: 更新方块状态和视觉效果
+        
+        if (world == null) {
+            return;
+        }
+        
+        // 同步更新世界中的方块状态，使模型/贴图能够根据 powered 属性切换
+        BlockState state = world.getBlockState(pos);
+        if (state.isOf(ModBlocks.THIRD_RAIL) && state.getBlock() instanceof ThirdRailBlock thirdRail) {
+            thirdRail.setPowered(world, pos, powered);
+        } else if (state.isOf(ModBlocks.CONTACT_NETWORK) && state.getBlock() instanceof ContactNetworkBlock contactNetwork) {
+            contactNetwork.setPowered(world, pos, powered);
+        }
     }
     
     /**

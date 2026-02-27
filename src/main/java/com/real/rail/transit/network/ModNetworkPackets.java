@@ -189,9 +189,15 @@ public class ModNetworkPackets {
                 BlockPos endPos = payload.endPos();
                 var world = context.player().getWorld();
                 // 批量应用配置到指定区域
-                applyBatchConfiguration(world, startPos, endPos, payload.trackType(), payload.powerType(), payload.signalConfig());
+                int count = applyBatchConfiguration(world, startPos, endPos, payload.trackType(), payload.powerType(), payload.signalConfig());
                 context.player().sendMessage(net.minecraft.text.Text.translatable(
                     "gui.real-rail-transit-mod.track_construction_control_panel.batch_applied"), false);
+                if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+                    com.real.rail.transit.util.ModRuntimeLog.info(
+                        "线路建设批量配置完成，区域 " + startPos + " -> " + endPos + "，处理方块数=" + count,
+                        serverWorld
+                    );
+                }
             });
         });
         
@@ -253,8 +259,9 @@ public class ModNetworkPackets {
         
         ServerPlayNetworking.registerGlobalReceiver(StationConstructionBatchApplyPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
+                var world = context.player().getWorld();
                 int count = applyStationBatchConfiguration(
-                    context.player().getWorld(),
+                    world,
                     payload.startPos(),
                     payload.endPos(),
                     payload.facilityType(),
@@ -264,6 +271,13 @@ public class ModNetworkPackets {
                     "gui.real-rail-transit-mod.station_construction_control_panel.batch_applied",
                     count
                 ), false);
+                if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+                    com.real.rail.transit.util.ModRuntimeLog.info(
+                        "车站设施批量配置完成，区域 " + payload.startPos() + " -> " + payload.endPos() +
+                            "，类型=" + payload.facilityType() + "，数量=" + count,
+                        serverWorld
+                    );
+                }
             });
         });
     }
@@ -386,7 +400,7 @@ public class ModNetworkPackets {
     /**
      * 批量应用配置到指定区域
      */
-    private static void applyBatchConfiguration(net.minecraft.world.World world, BlockPos startPos, BlockPos endPos,
+    private static int applyBatchConfiguration(net.minecraft.world.World world, BlockPos startPos, BlockPos endPos,
                                              String trackType, String powerType, String signalConfig) {
         int minX = Math.min(startPos.getX(), endPos.getX());
         int maxX = Math.max(startPos.getX(), endPos.getX());
@@ -403,31 +417,71 @@ public class ModNetworkPackets {
                     var state = world.getBlockState(pos);
                     
                     // 根据配置类型应用不同的设置
-                    if (trackType != null && !trackType.isEmpty() && state.isOf(com.real.rail.transit.registry.ModBlocks.TRACK)) {
-                        // 应用轨道类型配置
-                        count++;
+                    if (trackType != null && !trackType.isEmpty()) {
+                        // 轨道类型配置：支持在基础轨道与护轨之间切换，或清除轨道
+                        String tt = trackType.toLowerCase(java.util.Locale.ROOT);
+                        if (state.isOf(com.real.rail.transit.registry.ModBlocks.TRACK) ||
+                            state.isOf(com.real.rail.transit.registry.ModBlocks.GUARD_TRACK)) {
+                            if ("guard".equals(tt)) {
+                                // 切换为护轨
+                                if (!state.isOf(com.real.rail.transit.registry.ModBlocks.GUARD_TRACK)) {
+                                    world.setBlockState(pos, com.real.rail.transit.registry.ModBlocks.GUARD_TRACK.getDefaultState());
+                                    count++;
+                                }
+                            } else if ("normal".equals(tt)) {
+                                // 切换为普通轨道
+                                if (!state.isOf(com.real.rail.transit.registry.ModBlocks.TRACK)) {
+                                    world.setBlockState(pos, com.real.rail.transit.registry.ModBlocks.TRACK.getDefaultState());
+                                    count++;
+                                }
+                            } else if ("clear".equals(tt)) {
+                                // 清除轨道
+                                world.removeBlock(pos, false);
+                                count++;
+                            }
+                        }
                     }
                     if (powerType != null && !powerType.isEmpty()) {
                         if (state.isOf(com.real.rail.transit.registry.ModBlocks.THIRD_RAIL) || 
                             state.isOf(com.real.rail.transit.registry.ModBlocks.CONTACT_NETWORK)) {
-                            // 应用供电方式配置
+                            // 应用供电方式配置，并同步方块供电状态（NONE 视为断电）
                             com.real.rail.transit.system.PowerSystem.PowerType powerTypeEnum = 
-                                "third_rail".equals(powerType) ? com.real.rail.transit.system.PowerSystem.PowerType.THIRD_RAIL :
-                                "catenary".equals(powerType) ? com.real.rail.transit.system.PowerSystem.PowerType.CATENARY :
+                                "third_rail".equalsIgnoreCase(powerType) ? com.real.rail.transit.system.PowerSystem.PowerType.THIRD_RAIL :
+                                "catenary".equalsIgnoreCase(powerType) ? com.real.rail.transit.system.PowerSystem.PowerType.CATENARY :
                                 com.real.rail.transit.system.PowerSystem.PowerType.NONE;
-                            com.real.rail.transit.system.PowerSystem.getInstance().setPowerSectionType(pos, powerTypeEnum);
+                            com.real.rail.transit.system.PowerSystem powerSystem = com.real.rail.transit.system.PowerSystem.getInstance();
+                            powerSystem.setPowerSectionType(pos, powerTypeEnum);
+                            // NONE 表示该区段无电
+                            boolean powered = powerTypeEnum != com.real.rail.transit.system.PowerSystem.PowerType.NONE;
+                            powerSystem.setPowerState(world, pos, powered);
                             count++;
                         }
                     }
                     if (signalConfig != null && !signalConfig.isEmpty() && state.isOf(com.real.rail.transit.registry.ModBlocks.SIGNAL)) {
-                        // 应用信号机配置
-                        count++;
+                        // 应用信号机配置：支持 red / yellow / green / guiding / auto
+                        String config = signalConfig.toLowerCase(java.util.Locale.ROOT);
+                        com.real.rail.transit.block.SignalBlock.SignalState newState = null;
+                        switch (config) {
+                            case "red" -> newState = com.real.rail.transit.block.SignalBlock.SignalState.RED;
+                            case "yellow" -> newState = com.real.rail.transit.block.SignalBlock.SignalState.YELLOW;
+                            case "green" -> newState = com.real.rail.transit.block.SignalBlock.SignalState.GREEN;
+                            case "guiding" -> newState = com.real.rail.transit.block.SignalBlock.SignalState.GUIDING;
+                            case "auto" -> {
+                                com.real.rail.transit.system.SignalSystem.getInstance().updateSignalState(world, pos);
+                                count++;
+                            }
+                        }
+                        if (newState != null) {
+                            com.real.rail.transit.system.SignalSystem.getInstance().setSignalState(world, pos, newState);
+                            count++;
+                        }
                     }
                 }
             }
         }
         
         RealRailTransitMod.LOGGER.info("批量应用配置完成，共处理 {} 个方块", count);
+        return count;
     }
     
     /**
@@ -437,6 +491,12 @@ public class ModNetworkPackets {
                                        com.real.rail.transit.station.entity.TicketMachineBlockEntity ticketEntity) {
         if (!ticketEntity.isWorking()) {
             player.sendMessage(net.minecraft.text.Text.translatable("gui.real-rail-transit-mod.ticket_machine.broken"), false);
+            if (player.getWorld() instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+                com.real.rail.transit.util.ModRuntimeLog.warn(
+                    "售票机不可用，位置 " + ticketEntity.getPos(),
+                    serverWorld
+                );
+            }
             return;
         }
         
@@ -453,6 +513,12 @@ public class ModNetworkPackets {
         
         if (emeraldCount < price) {
             player.sendMessage(net.minecraft.text.Text.translatable("gui.real-rail-transit-mod.ticket_machine.insufficient_funds", price), false);
+            if (player.getWorld() instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+                com.real.rail.transit.util.ModRuntimeLog.warn(
+                    "玩家 " + player.getName().getString() + " 购票失败，余额不足，票价=" + price,
+                    serverWorld
+                );
+            }
             return;
         }
         
@@ -493,6 +559,12 @@ public class ModNetworkPackets {
         ticketEntity.incrementTicketCount();
         
         player.sendMessage(net.minecraft.text.Text.translatable("gui.real-rail-transit-mod.ticket_machine.bought", price), false);
+        if (player.getWorld() instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+            com.real.rail.transit.util.ModRuntimeLog.info(
+                "玩家 " + player.getName().getString() + " 成功购票，票价=" + price + "，位置 " + ticketEntity.getPos(),
+                serverWorld
+            );
+        }
     }
     
     /**

@@ -1,6 +1,7 @@
 package com.real.rail.transit;
 
 import com.real.rail.transit.addon.AddonManager;
+import com.real.rail.transit.command.ModCommands;
 import com.real.rail.transit.network.ModNetworkPackets;
 import com.real.rail.transit.registry.ModBlockEntities;
 import com.real.rail.transit.registry.ModBlocks;
@@ -41,6 +42,9 @@ public class RealRailTransitMod implements ModInitializer {
 		
 		// 注册网络包
 		ModNetworkPackets.register();
+
+		// 注册自定义指令
+		ModCommands.register();
 		
 		// 注册物品
 		ModItems.registerModItems();

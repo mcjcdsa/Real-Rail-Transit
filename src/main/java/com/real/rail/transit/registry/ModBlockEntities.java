@@ -5,6 +5,7 @@ import com.real.rail.transit.block.entity.SignalBlockEntity;
 import com.real.rail.transit.block.entity.TrainPowerSettingControllerBlockEntity;
 import com.real.rail.transit.station.entity.ArrivalDisplayScreenBlockEntity;
 import com.real.rail.transit.station.entity.DisplayScreenBlockEntity;
+import com.real.rail.transit.station.entity.StationMarkerBlockEntity;
 import com.real.rail.transit.station.entity.StationRadioBlockEntity;
 import com.real.rail.transit.station.entity.TicketMachineBlockEntity;
 
@@ -20,6 +21,7 @@ public class ModBlockEntities {
         ArrivalDisplayScreenBlockEntity.register();
         SensorControllerBlockEntity.register();
         TrainPowerSettingControllerBlockEntity.register();
+        StationMarkerBlockEntity.register();
     }
 }
 

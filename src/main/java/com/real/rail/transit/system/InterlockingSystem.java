@@ -69,12 +69,24 @@ public class InterlockingSystem {
         // 检查起点和终点信号机是否存在
         if (!(world.getBlockState(startSignal).getBlock() instanceof SignalBlock) ||
             !(world.getBlockState(endSignal).getBlock() instanceof SignalBlock)) {
+            if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+                com.real.rail.transit.util.ModRuntimeLog.warn(
+                    "进路排列失败：起点或终点不是信号机 start=" + startSignal + ", end=" + endSignal,
+                    serverWorld
+                );
+            }
             return false;
         }
         
         // 查找路径
         List<BlockPos> path = TrackNetwork.getInstance().findPath(world, startSignal, endSignal);
         if (path.isEmpty()) {
+            if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+                com.real.rail.transit.util.ModRuntimeLog.warn(
+                    "进路排列失败：找不到从 " + startSignal + " 到 " + endSignal + " 的轨道路径",
+                    serverWorld
+                );
+            }
             return false; // 无法找到路径
         }
         
@@ -89,6 +101,12 @@ public class InterlockingSystem {
         // 检查道岔是否可以锁定
         for (BlockPos turnoutPos : turnouts) {
             if (!canLockTurnout(world, turnoutPos)) {
+                if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+                    com.real.rail.transit.util.ModRuntimeLog.warn(
+                        "进路排列失败：道岔 " + turnoutPos + " 已被锁定或不可用",
+                        serverWorld
+                    );
+                }
                 return false; // 道岔无法锁定（可能已被其他进路占用）
             }
         }
@@ -103,6 +121,7 @@ public class InterlockingSystem {
         for (BlockPos turnoutPos : turnouts) {
             lockTurnout(world, turnoutPos);
         }
+        route.setLocked(true);
         
         // 设置信号机为绿灯
         SignalSystem.getInstance().setSignalState(world, startSignal, SignalBlock.SignalState.GREEN);
@@ -110,6 +129,13 @@ public class InterlockingSystem {
         // 保存进路
         routes.put(routeId, route);
         signalRouteMap.put(startSignal, route);
+        
+        if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+            com.real.rail.transit.util.ModRuntimeLog.info(
+                "进路排列成功：" + routeId + "，道岔数量=" + turnouts.size(),
+                serverWorld
+            );
+        }
         
         return true;
     }
@@ -127,12 +153,20 @@ public class InterlockingSystem {
         for (BlockPos turnoutPos : route.getTurnouts()) {
             unlockTurnout(world, turnoutPos);
         }
+        route.setLocked(false);
         
         // 设置信号机为红灯
         SignalSystem.getInstance().setSignalState(world, route.getStartSignal(), SignalBlock.SignalState.RED);
         
         // 移除关联
         signalRouteMap.remove(route.getStartSignal());
+        
+        if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+            com.real.rail.transit.util.ModRuntimeLog.info(
+                "进路已取消：" + routeId,
+                serverWorld
+            );
+        }
     }
     
     /**
@@ -187,7 +221,22 @@ public class InterlockingSystem {
         }
         
         // 检查前方轨道是否被占用
-        // TODO: 实现轨道占用检测
+        // 简化实现：在信号机前方一定范围内查找列车实体
+        int checkDistance = 10;
+        net.minecraft.util.math.Box box = new net.minecraft.util.math.Box(
+            signalPos.getX() - 1, signalPos.getY() - 2, signalPos.getZ() - 1,
+            signalPos.getX() + checkDistance, signalPos.getY() + 2, signalPos.getZ() + 1
+        );
+        
+        List<com.real.rail.transit.entity.TrainEntity> trains = world.getEntitiesByType(
+            com.real.rail.transit.registry.ModEntities.TRAIN,
+            box,
+            entity -> true
+        );
+        
+        if (!trains.isEmpty()) {
+            return false; // 前方区段存在列车
+        }
         
         return true;
     }

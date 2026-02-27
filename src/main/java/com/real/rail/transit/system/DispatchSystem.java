@@ -62,6 +62,12 @@ public class DispatchSystem {
     // 存储活跃列车
     private final Map<String, TrainEntity> activeTrains = new HashMap<>();
     
+    /**
+     * 停站状态：记录列车当前停靠的车站以及开始停站的时间
+     */
+    private final Map<String, Long> trainStopStartTimes = new HashMap<>();
+    private final Map<String, String> trainCurrentStations = new HashMap<>();
+    
     private DispatchSystem() {
     }
     
@@ -126,7 +132,7 @@ public class DispatchSystem {
         
         // 更新所有活跃列车的状态
         for (TrainEntity train : activeTrains.values()) {
-            updateTrainStatus(world, train);
+            updateTrainStatus(world, train, currentTime);
         }
     }
     
@@ -176,20 +182,26 @@ public class DispatchSystem {
         // 注册到活跃列车列表
         registerTrain(schedule.getTrainId(), train);
         
-        com.real.rail.transit.RealRailTransitMod.LOGGER.info("列车 {} 已发车，从 {} 到 {}", 
+        String logMsg = String.format("列车 %s 已发车，从 %s 到 %s",
             schedule.getTrainId(), schedule.getStartStation(), schedule.getEndStation());
+        com.real.rail.transit.RealRailTransitMod.LOGGER.info(logMsg);
+        if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+            com.real.rail.transit.util.ModRuntimeLog.info(logMsg, serverWorld);
+        }
     }
     
     /**
      * 更新列车状态
      */
-    private void updateTrainStatus(World world, TrainEntity train) {
+    private void updateTrainStatus(World world, TrainEntity train, long currentTime) {
         // 检查列车是否还在世界中
         if (train.isRemoved() || !train.isAlive()) {
             // 列车已移除，取消注册
             String trainId = train.getTrainId();
             if (trainId != null) {
                 unregisterTrain(trainId);
+                trainStopStartTimes.remove(trainId);
+                trainCurrentStations.remove(trainId);
             }
             return;
         }
@@ -198,24 +210,92 @@ public class DispatchSystem {
         BlockPos trainPos = train.getBlockPos();
         ScheduleEntry schedule = getSchedule(train.getTrainId());
         if (schedule != null) {
-            // 检查是否到达停靠站
+            String trainId = train.getTrainId();
+            if (trainId == null) {
+                return;
+            }
+            
+            // 检查是否正在某站停靠
+            String currentStation = trainCurrentStations.get(trainId);
+            Long stopStartTime = trainStopStartTimes.get(trainId);
+            
+            if (currentStation != null && stopStartTime != null) {
+                // 正在停站，判断是否到了发车时间
+                Integer stopDuration = schedule.getStopTimes().get(currentStation);
+                if (stopDuration == null) {
+                    // 未配置停站时间则默认 100 tick
+                    stopDuration = 100;
+                }
+                
+                if (currentTime - stopStartTime >= stopDuration) {
+                    // 停站时间已到，重新启动列车
+                    // 简化：设定一个默认巡航速度
+                    train.setTargetSpeed(20.0);
+                    trainCurrentStations.remove(trainId);
+                    trainStopStartTimes.remove(trainId);
+                } else {
+                    // 继续保持停车状态
+                    train.setTargetSpeed(0);
+                }
+                return;
+            }
+            
+            // 未处于停站状态，检查是否到达新的停靠站
             for (String station : schedule.getStations()) {
                 BlockPos stationPos = findStationPosition(world, station);
                 if (stationPos != null && trainPos.isWithinDistance(stationPos, 3.0)) {
-                    // 到达车站，停车
+                    // 到达车站，开始停站
                     train.setTargetSpeed(0);
-                    // TODO: 实现停站逻辑（开门、等待、关门、继续运行）
+                    trainCurrentStations.put(trainId, station);
+                    trainStopStartTimes.put(trainId, currentTime);
+                    
+                    // 这里可以触发开门、广播等逻辑，留作后续扩展
+                    break;
                 }
             }
         }
     }
     
     /**
-     * 查找车站位置（简化实现）
+     * 查找车站位置
+     * 优先查找带有对应站点ID/名称的站点标记方块，找不到时回退到旧的哈希坐标方案。
      */
     private BlockPos findStationPosition(World world, String stationName) {
-        // 简化实现：使用车站名称的哈希值作为坐标偏移
-        // 实际应该从配置文件或数据库读取
+        if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+            // 在一定范围内搜索 StationMarker（以世界中心为圆心，半径 64 区块）
+            // 注意：这是简化实现，未来建议改为持久化站点索引
+            net.minecraft.util.math.ChunkPos center = new net.minecraft.util.math.ChunkPos(0, 0);
+            final BlockPos[] result = new BlockPos[1];
+            net.minecraft.util.math.ChunkPos.stream(center, 64).forEach(chunkPos -> {
+                if (result[0] != null) return;
+                if (serverWorld.isChunkLoaded(chunkPos.x, chunkPos.z)) {
+                    int startX = chunkPos.getStartX();
+                    int startZ = chunkPos.getStartZ();
+                    for (int y = serverWorld.getBottomY(); y < serverWorld.getTopY() && result[0] == null; y++) {
+                        for (int x = 0; x < 16 && result[0] == null; x++) {
+                            for (int z = 0; z < 16; z++) {
+                                BlockPos pos = new BlockPos(startX + x, y, startZ + z);
+                                var state = serverWorld.getBlockState(pos);
+                                if (state.getBlock() instanceof com.real.rail.transit.station.StationMarkerBlock) {
+                                    var be = serverWorld.getBlockEntity(pos);
+                                    if (be instanceof com.real.rail.transit.station.entity.StationMarkerBlockEntity marker) {
+                                        String id = marker.getStationId();
+                                        String name = marker.getStationName();
+                                        if (stationName.equalsIgnoreCase(id) || stationName.equalsIgnoreCase(name)) {
+                                            result[0] = pos;
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            if (result[0] != null) return result[0];
+        }
+        
+        // 回退实现：使用车站名称的哈希值作为坐标偏移（保持与旧版本兼容）
         int hash = stationName.hashCode();
         int x = (hash & 0xFFFF) - 32768;
         int z = ((hash >> 16) & 0xFFFF) - 32768;

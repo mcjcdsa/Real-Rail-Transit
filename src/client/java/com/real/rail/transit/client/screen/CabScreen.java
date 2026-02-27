@@ -20,13 +20,17 @@ public class CabScreen extends Screen {
     // 控制按钮
     private ButtonWidget startEngineButton;
     private ButtonWidget stopEngineButton;
+    private ButtonWidget atoStartButton;
     private ButtonWidget openDoorsButton;
     private ButtonWidget closeDoorsButton;
     private ButtonWidget emergencyBrakeButton;
+    private ButtonWidget quickBrakeButton;
+    private ButtonWidget forceReleaseButton;
     private ButtonWidget modeSwitchButton;
     private ButtonWidget speedUpButton;
     private ButtonWidget speedDownButton;
     private ButtonWidget hornButton;
+    private ButtonWidget headlightButton;
     
     public CabScreen(PlayerEntity player, TrainEntity train) {
         super(Text.translatable("screen.real-rail-transit-mod.cab"));
@@ -57,6 +61,14 @@ public class CabScreen extends Screen {
                 TrainSoundController.playButtonClickSound(train.getBlockPos());
             }
         ).dimensions(centerX + 10, centerY - 80, 90, 20).build();
+
+        this.atoStartButton = ButtonWidget.builder(
+            Text.translatable("button.real-rail-transit-mod.ato_start"),
+            button -> {
+                CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.ATO_START);
+                TrainSoundController.playButtonClickSound(train.getBlockPos());
+            }
+        ).dimensions(centerX - 100, centerY - 55, 200, 20).build();
         
         // 开关门按钮
         this.openDoorsButton = ButtonWidget.builder(
@@ -65,7 +77,7 @@ public class CabScreen extends Screen {
                 CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.OPEN_DOORS);
                 TrainSoundController.playButtonClickSound(train.getBlockPos());
             }
-        ).dimensions(centerX - 100, centerY - 50, 90, 20).build();
+        ).dimensions(centerX - 100, centerY - 30, 90, 20).build();
         
         this.closeDoorsButton = ButtonWidget.builder(
             Text.translatable("button.real-rail-transit-mod.close_doors"),
@@ -73,16 +85,32 @@ public class CabScreen extends Screen {
                 CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.CLOSE_DOORS);
                 TrainSoundController.playButtonClickSound(train.getBlockPos());
             }
-        ).dimensions(centerX + 10, centerY - 50, 90, 20).build();
+        ).dimensions(centerX + 10, centerY - 30, 90, 20).build();
         
-        // 紧急制动按钮
+        // 紧急制动与缓解按钮
         this.emergencyBrakeButton = ButtonWidget.builder(
             Text.translatable("button.real-rail-transit-mod.emergency_brake"),
             button -> {
                 CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.EMERGENCY_BRAKE);
                 TrainSoundController.playButtonClickSound(train.getBlockPos());
             }
-        ).dimensions(centerX - 100, centerY - 20, 200, 20).build();
+        ).dimensions(centerX - 100, centerY - 5, 90, 20).build();
+
+        this.quickBrakeButton = ButtonWidget.builder(
+            Text.translatable("button.real-rail-transit-mod.quick_brake"),
+            button -> {
+                CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.QUICK_BRAKE);
+                TrainSoundController.playButtonClickSound(train.getBlockPos());
+            }
+        ).dimensions(centerX + 10, centerY - 5, 90, 20).build();
+
+        this.forceReleaseButton = ButtonWidget.builder(
+            Text.translatable("button.real-rail-transit-mod.force_release"),
+            button -> {
+                CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.FORCE_RELEASE);
+                TrainSoundController.playButtonClickSound(train.getBlockPos());
+            }
+        ).dimensions(centerX - 100, centerY + 20, 200, 20).build();
         
         // 模式切换按钮
         this.modeSwitchButton = ButtonWidget.builder(
@@ -91,7 +119,7 @@ public class CabScreen extends Screen {
                 CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.MODE_SWITCH);
                 TrainSoundController.playButtonClickSound(train.getBlockPos());
             }
-        ).dimensions(centerX - 100, centerY + 10, 90, 20).build();
+        ).dimensions(centerX - 100, centerY + 45, 90, 20).build();
         
         // 速度控制按钮
         this.speedUpButton = ButtonWidget.builder(
@@ -100,7 +128,7 @@ public class CabScreen extends Screen {
                 CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.SPEED_UP);
                 TrainSoundController.playButtonClickSound(train.getBlockPos());
             }
-        ).dimensions(centerX - 100, centerY + 40, 90, 20).build();
+        ).dimensions(centerX - 100, centerY + 70, 90, 20).build();
         
         this.speedDownButton = ButtonWidget.builder(
             Text.translatable("button.real-rail-transit-mod.speed_down"),
@@ -108,27 +136,39 @@ public class CabScreen extends Screen {
                 CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.SPEED_DOWN);
                 TrainSoundController.playButtonClickSound(train.getBlockPos());
             }
-        ).dimensions(centerX + 10, centerY + 40, 90, 20).build();
+        ).dimensions(centerX + 10, centerY + 70, 90, 20).build();
         
-        // 鸣笛按钮
+        // 鸣笛与前照灯
         this.hornButton = ButtonWidget.builder(
             Text.translatable("button.real-rail-transit-mod.horn"),
             button -> {
                 CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.HORN);
                 TrainSoundController.playHornSound(train);
             }
-        ).dimensions(centerX - 100, centerY + 70, 200, 20).build();
+        ).dimensions(centerX - 100, centerY + 95, 90, 20).build();
+
+        this.headlightButton = ButtonWidget.builder(
+            Text.translatable("button.real-rail-transit-mod.headlight"),
+            button -> {
+                CabInteractionSystem.getInstance().handleButtonClick(player, CabInteractionSystem.ButtonType.HEADLIGHT);
+                TrainSoundController.playButtonClickSound(train.getBlockPos());
+            }
+        ).dimensions(centerX + 10, centerY + 95, 90, 20).build();
         
         // 添加所有按钮到界面
         this.addDrawableChild(startEngineButton);
         this.addDrawableChild(stopEngineButton);
+        this.addDrawableChild(atoStartButton);
         this.addDrawableChild(openDoorsButton);
         this.addDrawableChild(closeDoorsButton);
         this.addDrawableChild(emergencyBrakeButton);
+        this.addDrawableChild(quickBrakeButton);
+        this.addDrawableChild(forceReleaseButton);
         this.addDrawableChild(modeSwitchButton);
         this.addDrawableChild(speedUpButton);
         this.addDrawableChild(speedDownButton);
         this.addDrawableChild(hornButton);
+        this.addDrawableChild(headlightButton);
     }
     
     @Override
@@ -156,11 +196,14 @@ public class CabScreen extends Screen {
     private String getModeText(TrainEntity.DrivingMode mode) {
         return switch (mode) {
             case ATO -> "自动驾驶";
+            case ATB -> "自动折返";
+            case IATP -> "点式ATP";
             case CBTC -> "CBTC";
             case ATP -> "ATP";
             case ATC -> "ATC";
             case RM -> "限制人工";
             case MANUAL -> "手动";
+            case OFF -> "关闭保护";
         };
     }
     

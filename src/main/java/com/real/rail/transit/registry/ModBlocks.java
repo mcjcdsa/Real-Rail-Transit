@@ -16,6 +16,7 @@ import com.real.rail.transit.block.ThirdRailBlock;
 import com.real.rail.transit.block.TrackBlock;
 import com.real.rail.transit.block.TrackConstructionControlPanelBlock;
 import com.real.rail.transit.block.TrackControlPanelBlock;
+import com.real.rail.transit.block.TrainPanelBlock;
 import com.real.rail.transit.block.TrainPowerSettingControllerBlock;
 import com.real.rail.transit.block.TurnoutBlock;
 import com.real.rail.transit.station.ArrivalDisplayScreenBlock;
@@ -33,6 +34,7 @@ import com.real.rail.transit.station.GlassWallBlock;
 import com.real.rail.transit.station.LitCeilingBlock;
 import com.real.rail.transit.station.PostageBlock;
 import com.real.rail.transit.station.ShieldDoorBlock;
+import com.real.rail.transit.station.StationMarkerBlock;
 import com.real.rail.transit.station.SmallTVBlock;
 import com.real.rail.transit.station.StaircaseStepBlock;
 import com.real.rail.transit.station.StationConstructionControlPanelBlock;
@@ -169,6 +171,11 @@ public class ModBlocks {
         new StationRadioBlock(FabricBlockSettings.create().strength(2.0f)),
         new Item.Settings());
     
+    // 站点标记
+    public static final Block STATION_MARKER = registerBlock("station_marker",
+        new StationMarkerBlock(FabricBlockSettings.create().strength(1.0f).nonOpaque()),
+        new Item.Settings());
+    
     // 电梯轨道
     public static final Block ELEVATOR_TRACK = registerBlock("elevator_track",
         new ElevatorTrackBlock(FabricBlockSettings.create().strength(3.0f)),
@@ -191,6 +198,11 @@ public class ModBlocks {
     public static final Block TRACK_CONTROL_PANEL = Registry.register(Registries.BLOCK,
         Identifier.of(RealRailTransitMod.MOD_ID, "track_control_panel"),
         new TrackControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()));
+
+    // 列车面板（可选择列车、设置编组，与追加包创建器对应）
+    public static final Block TRAIN_PANEL = registerBlock("train_panel",
+        new TrainPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
+        new Item.Settings());
     
     // 信号铺设器
     public static final Block SIGNAL_LAYOUT_CONTROLLER = registerBlock("signal_layout_controller",

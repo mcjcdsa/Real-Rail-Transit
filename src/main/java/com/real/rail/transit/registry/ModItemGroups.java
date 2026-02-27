@@ -35,7 +35,7 @@ public class ModItemGroups {
                 entries.add(ModBlocks.CONTACT_NETWORK);
                 entries.add(ModBlocks.TRAIN_POWER_SETTING_CONTROLLER);
                 entries.add(ModBlocks.DAOJI_MACHINE);
-                entries.add(ModItems.TRACK_CONSTRUCTION_CONTROL_PANEL);
+                entries.add(ModBlocks.TRACK_CONSTRUCTION_CONTROL_PANEL);
                 entries.add(ModBlocks.CLEANER);
                 
                 // ========== 车站设施类 ==========
@@ -51,10 +51,12 @@ public class ModItemGroups {
                 entries.add(ModBlocks.STATION_RADIO);
                 entries.add(ModBlocks.ELEVATOR_TRACK);
                 entries.add(ModBlocks.ELECTRONIC_DOOR_CONTROLLER);
-                entries.add(ModItems.STATION_CONSTRUCTION_CONTROL_PANEL);
+                entries.add(ModBlocks.STATION_CONSTRUCTION_CONTROL_PANEL);
                 
                 // ========== 线路设施类 ==========
+                // 线路控制面板使用 Item 版本（方块未注册 BlockItem）
                 entries.add(ModItems.TRACK_CONTROL_PANEL);
+                entries.add(ModBlocks.TRAIN_PANEL);
                 entries.add(ModBlocks.SIGNAL_LAYOUT_CONTROLLER);
                 entries.add(ModBlocks.SENSOR_CONTROLLER);
                 entries.add(ModBlocks.SENSOR_LAYOUT_CONTROLLER);
@@ -76,7 +78,6 @@ public class ModItemGroups {
                 entries.add(ModItems.STATION_BRUSH);
                 entries.add(ModItems.SETTING_CONTROLLER);
                 entries.add(ModItems.SHIELD_DOOR_KEY);
-                entries.add(ModItems.TICKET_CARD);
             })
             .build()
     );

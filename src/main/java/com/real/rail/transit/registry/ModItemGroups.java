@@ -14,31 +14,43 @@ import net.minecraft.util.Identifier;
  */
 public class ModItemGroups {
     /**
-     * Real Rail Transit 主物品组
+     * 线路建设类物品组
      */
-    public static final ItemGroup REAL_RAIL_TRANSIT = Registry.register(
+    public static final ItemGroup TRACK_CONSTRUCTION = Registry.register(
         Registries.ITEM_GROUP,
-        Identifier.of(RealRailTransitMod.MOD_ID, "main"),
+        Identifier.of(RealRailTransitMod.MOD_ID, "track_construction"),
         FabricItemGroup.builder()
-            .displayName(Text.translatable("itemGroup.real-rail-transit-mod.main"))
+            .displayName(Text.translatable("itemGroup.real-rail-transit-mod.track_construction"))
             .icon(() -> new ItemStack(ModBlocks.TRACK))
             .entries((displayContext, entries) -> {
-                // ========== 线路建设类 ==========
                 entries.add(ModBlocks.TRACK);
                 entries.add(ModBlocks.SIGNAL);
                 entries.add(ModBlocks.TURNOUT);
+                entries.add(ModBlocks.THIRD_RAIL);
+                entries.add(ModBlocks.CONTACT_NETWORK);
                 entries.add(ModBlocks.CONNECTION_PART);
                 entries.add(ModBlocks.SWITCH);
                 entries.add(ModBlocks.GUARD_TRACK);
                 entries.add(ModBlocks.CABLE);
-                entries.add(ModBlocks.THIRD_RAIL);
-                entries.add(ModBlocks.CONTACT_NETWORK);
                 entries.add(ModBlocks.TRAIN_POWER_SETTING_CONTROLLER);
                 entries.add(ModBlocks.DAOJI_MACHINE);
-                entries.add(ModItems.TRACK_CONSTRUCTION_CONTROL_PANEL);
                 entries.add(ModBlocks.CLEANER);
-                
-                // ========== 车站设施类 ==========
+                entries.add(ModBlocks.SIGNAL_LAYOUT_CONTROLLER);
+                entries.add(ModItems.TRACK_CONSTRUCTION_CONTROL_PANEL);
+            })
+            .build()
+    );
+    
+    /**
+     * 车站设施类物品组
+     */
+    public static final ItemGroup STATION_FACILITIES = Registry.register(
+        Registries.ITEM_GROUP,
+        Identifier.of(RealRailTransitMod.MOD_ID, "station_facilities"),
+        FabricItemGroup.builder()
+            .displayName(Text.translatable("itemGroup.real-rail-transit-mod.station_facilities"))
+            .icon(() -> new ItemStack(ModBlocks.UPPER_SHIELD_DOOR))
+            .entries((displayContext, entries) -> {
                 entries.add(ModBlocks.UPPER_SHIELD_DOOR);
                 entries.add(ModBlocks.LOWER_SHIELD_DOOR);
                 entries.add(ModBlocks.ELEVATOR);
@@ -49,19 +61,26 @@ public class ModItemGroups {
                 entries.add(ModBlocks.GATE);
                 entries.add(ModBlocks.SMALL_TV);
                 entries.add(ModBlocks.STATION_RADIO);
+                entries.add(ModBlocks.STATION_MARKER);
                 entries.add(ModBlocks.ELEVATOR_TRACK);
                 entries.add(ModBlocks.ELECTRONIC_DOOR_CONTROLLER);
-                entries.add(ModItems.STATION_CONSTRUCTION_CONTROL_PANEL);
-                
-                // ========== 线路设施类 ==========
-                // 线路控制面板使用 Item 版本（方块未注册 BlockItem）
-                entries.add(ModItems.TRACK_CONTROL_PANEL);
-                entries.add(ModBlocks.TRAIN_PANEL);
-                entries.add(ModBlocks.SIGNAL_LAYOUT_CONTROLLER);
                 entries.add(ModBlocks.SENSOR_CONTROLLER);
                 entries.add(ModBlocks.SENSOR_LAYOUT_CONTROLLER);
-                
-                // ========== 车站建筑类 ==========
+                entries.add(ModItems.STATION_CONSTRUCTION_CONTROL_PANEL);
+            })
+            .build()
+    );
+    
+    /**
+     * 车站建筑类物品组
+     */
+    public static final ItemGroup STATION_BUILDING = Registry.register(
+        Registries.ITEM_GROUP,
+        Identifier.of(RealRailTransitMod.MOD_ID, "station_building"),
+        FabricItemGroup.builder()
+            .displayName(Text.translatable("itemGroup.real-rail-transit-mod.station_building"))
+            .icon(() -> new ItemStack(ModBlocks.BARRICADE))
+            .entries((displayContext, entries) -> {
                 entries.add(ModBlocks.BARRICADE);
                 entries.add(ModBlocks.STAIRCASE_STEP);
                 entries.add(ModBlocks.GLASS_WALL);
@@ -71,13 +90,59 @@ public class ModItemGroups {
                 entries.add(ModBlocks.POSTAGE);
                 entries.add(ModBlocks.FIRE_EXTINGUISHER);
                 entries.add(ModBlocks.FIRE_WATER);
-                
-                // ========== 工具物品 ==========
+            })
+            .build()
+    );
+    
+    /**
+     * 控制面板类物品组
+     */
+    public static final ItemGroup CONTROL_PANELS = Registry.register(
+        Registries.ITEM_GROUP,
+        Identifier.of(RealRailTransitMod.MOD_ID, "control_panels"),
+        FabricItemGroup.builder()
+            .displayName(Text.translatable("itemGroup.real-rail-transit-mod.control_panels"))
+            .icon(() -> new ItemStack(ModItems.CONTROL_PANEL))
+            .entries((displayContext, entries) -> {
+                entries.add(ModItems.TRACK_CONSTRUCTION_CONTROL_PANEL);
+                entries.add(ModItems.STATION_CONSTRUCTION_CONTROL_PANEL);
+                entries.add(ModItems.TRACK_CONTROL_PANEL);
+                entries.add(ModItems.TRAIN_PANEL);
+                entries.add(ModItems.CONTROL_PANEL);
+            })
+            .build()
+    );
+    
+    /**
+     * 工具物品类物品组
+     */
+    public static final ItemGroup TOOLS = Registry.register(
+        Registries.ITEM_GROUP,
+        Identifier.of(RealRailTransitMod.MOD_ID, "tools"),
+        FabricItemGroup.builder()
+            .displayName(Text.translatable("itemGroup.real-rail-transit-mod.tools"))
+            .icon(() -> new ItemStack(ModItems.PRESET))
+            .entries((displayContext, entries) -> {
                 entries.add(ModItems.PRESET);
                 entries.add(ModItems.TRACK_BRUSH);
                 entries.add(ModItems.STATION_BRUSH);
                 entries.add(ModItems.SETTING_CONTROLLER);
                 entries.add(ModItems.SHIELD_DOOR_KEY);
+            })
+            .build()
+    );
+    
+    /**
+     * 其他物品类物品组
+     */
+    public static final ItemGroup OTHER_ITEMS = Registry.register(
+        Registries.ITEM_GROUP,
+        Identifier.of(RealRailTransitMod.MOD_ID, "other_items"),
+        FabricItemGroup.builder()
+            .displayName(Text.translatable("itemGroup.real-rail-transit-mod.other_items"))
+            .icon(() -> new ItemStack(ModItems.TICKET_CARD))
+            .entries((displayContext, entries) -> {
+                entries.add(ModItems.TICKET_CARD);
             })
             .build()
     );

@@ -70,11 +70,38 @@ public class TrainEntity extends Entity {
     
     public TrainEntity(EntityType<?> type, World world) {
         super(type, world);
+        // 设置默认边界框（列车尺寸：长20米，宽2.5米，高3.5米）
+        this.setBoundingBox(new net.minecraft.util.math.Box(-10, 0, -1.25, 10, 3.5, 1.25));
     }
     
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {
         // 初始化数据追踪器
+    }
+    
+    /**
+     * 更新边界框（在设置列车ID后调用）
+     */
+    public void updateBoundingBox() {
+        // 根据列车配置更新边界框
+        String id = this.getTrainId();
+        if (id != null && !id.isEmpty()) {
+            com.real.rail.transit.addon.AddonManager.TrainConfig config = 
+                com.real.rail.transit.addon.AddonManager.getInstance().getLoadedAddons().stream()
+                    .filter(train -> train.train_id.equals(id))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (config != null) {
+                double length = config.car_count * config.car_length;
+                double width = 2.5;
+                double height = 3.5;
+                this.setBoundingBox(new net.minecraft.util.math.Box(
+                    -length / 2, 0, -width / 2,
+                    length / 2, height, width / 2
+                ));
+            }
+        }
     }
     
     @Override
@@ -283,6 +310,48 @@ public class TrainEntity extends Entity {
      */
     public String getTrainId() {
         return this.trainId;
+    }
+    
+    /**
+     * 设置最高速度
+     */
+    public void setMaxSpeed(double maxSpeed) {
+        this.maxSpeed = Math.max(0.1, maxSpeed); // 确保最高速度至少为 0.1 m/s
+    }
+    
+    /**
+     * 获取最高速度
+     */
+    public double getMaxSpeed() {
+        return this.maxSpeed;
+    }
+    
+    /**
+     * 设置加速度
+     */
+    public void setAcceleration(double acceleration) {
+        this.acceleration = Math.max(0.1, acceleration); // 确保加速度至少为 0.1 m/s²
+    }
+    
+    /**
+     * 获取加速度
+     */
+    public double getAcceleration() {
+        return this.acceleration;
+    }
+    
+    /**
+     * 设置减速度
+     */
+    public void setDeceleration(double deceleration) {
+        this.deceleration = Math.max(0.1, deceleration); // 确保减速度至少为 0.1 m/s²
+    }
+    
+    /**
+     * 获取减速度
+     */
+    public double getDeceleration() {
+        return this.deceleration;
     }
     
     /**

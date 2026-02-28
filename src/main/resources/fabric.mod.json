@@ -12,7 +12,7 @@
 		"sources": "https://gitee.com/blkdg/real-rail-transit-mod.git"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/real-rail-transit-mod/icon.png",
+	"icon": "assets/real-rail-transit-mod/iconn.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

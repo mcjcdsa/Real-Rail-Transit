@@ -1,5 +1,6 @@
 package com.real.rail.transit.registry;
 
+import com.real.rail.transit.block.screen.ControlPanelScreenHandler;
 import com.real.rail.transit.block.screen.TrackConstructionControlPanelScreenHandler;
 import com.real.rail.transit.block.screen.TrackControlPanelScreenHandler;
 import com.real.rail.transit.block.screen.TrainPanelScreenHandler;
@@ -22,6 +23,7 @@ public class ModScreenHandlers {
         StationConstructionControlPanelScreenHandler.register();
         TrackControlPanelScreenHandler.register();
         TrainPanelScreenHandler.register();
+        ControlPanelScreenHandler.register();
     }
 }
 

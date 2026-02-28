@@ -14,6 +14,7 @@ import com.real.rail.transit.block.SignalLayoutControllerBlock;
 import com.real.rail.transit.block.SwitchBlock;
 import com.real.rail.transit.block.ThirdRailBlock;
 import com.real.rail.transit.block.TrackBlock;
+import com.real.rail.transit.block.ControlPanelBlock;
 import com.real.rail.transit.block.TrackConstructionControlPanelBlock;
 import com.real.rail.transit.block.TrackControlPanelBlock;
 import com.real.rail.transit.block.TrainPanelBlock;
@@ -199,10 +200,17 @@ public class ModBlocks {
         Identifier.of(RealRailTransitMod.MOD_ID, "track_control_panel"),
         new TrackControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()));
 
-    // 列车面板（可选择列车、设置编组，与追加包创建器对应）
-    public static final Block TRAIN_PANEL = registerBlock("train_panel",
-        new TrainPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()),
-        new Item.Settings());
+    // 列车面板（不注册为方块，只作为物品使用）
+    // 注意：此方块不注册BlockItem，只注册Block（保留类定义），实际使用Item版本
+    public static final Block TRAIN_PANEL = Registry.register(Registries.BLOCK,
+        Identifier.of(RealRailTransitMod.MOD_ID, "train_panel"),
+        new TrainPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()));
+    
+    // 控制面板（不注册为方块，只作为物品使用）
+    // 注意：此方块不注册BlockItem，只注册Block（保留类定义），实际使用Item版本
+    public static final Block CONTROL_PANEL = Registry.register(Registries.BLOCK,
+        Identifier.of(RealRailTransitMod.MOD_ID, "control_panel"),
+        new ControlPanelBlock(FabricBlockSettings.create().strength(2.0f).nonOpaque()));
     
     // 信号铺设器
     public static final Block SIGNAL_LAYOUT_CONTROLLER = registerBlock("signal_layout_controller",

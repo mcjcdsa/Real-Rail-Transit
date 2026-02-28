@@ -3,6 +3,8 @@ package com.real.rail.transit.network;
 import com.real.rail.transit.RealRailTransitMod;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
@@ -43,6 +45,13 @@ public class ModNetworkPackets {
     public static final Identifier STATION_CONSTRUCTION_CONFIG_DISPLAY = Identifier.of(RealRailTransitMod.MOD_ID, "station_construction_config_display");
     public static final Identifier STATION_CONSTRUCTION_BATCH_APPLY = Identifier.of(RealRailTransitMod.MOD_ID, "station_construction_batch_apply");
     
+    // 列车放置相关
+    public static final Identifier PLACE_TRAIN = Identifier.of(RealRailTransitMod.MOD_ID, "place_train");
+    
+    // 列车控制相关
+    public static final Identifier TRAIN_CONTROL = Identifier.of(RealRailTransitMod.MOD_ID, "train_control");
+    public static final Identifier TRAIN_SPEED_UPDATE = Identifier.of(RealRailTransitMod.MOD_ID, "train_speed_update");
+    
     public static void register() {
         RealRailTransitMod.LOGGER.info("注册网络包...");
         
@@ -59,6 +68,11 @@ public class ModNetworkPackets {
         PayloadTypeRegistry.playC2S().register(TrackConstructionBatchApplyPayload.ID, TrackConstructionBatchApplyPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(TrackControlRequestStatsPayload.ID, TrackControlRequestStatsPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StationConstructionSelectFacilityPayload.ID, StationConstructionSelectFacilityPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(PlaceTrainPayload.ID, PlaceTrainPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(TrainControlPayload.ID, TrainControlPayload.CODEC);
+        
+        // 注册Payload类型（S2C - 服务器到客户端）
+        PayloadTypeRegistry.playS2C().register(TrainSpeedUpdatePayload.ID, TrainSpeedUpdatePayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StationConstructionConfigShieldDoorPayload.ID, StationConstructionConfigShieldDoorPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StationConstructionConfigDisplayPayload.ID, StationConstructionConfigDisplayPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StationConstructionBatchApplyPayload.ID, StationConstructionBatchApplyPayload.CODEC);
@@ -277,6 +291,143 @@ public class ModNetworkPackets {
                             "，类型=" + payload.facilityType() + "，数量=" + count,
                         serverWorld
                     );
+                }
+            });
+        });
+        
+        // 注册列车放置网络包处理器
+        ServerPlayNetworking.registerGlobalReceiver(PlaceTrainPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                String trainId = payload.trainId();
+                var world = context.player().getWorld();
+                
+                // pos 是列车放置位置（轨道上方），需要检查下方是否是轨道
+                BlockPos trackPos = pos.down();
+                BlockState trackState = world.getBlockState(trackPos);
+                boolean isValid = trackState.getBlock() instanceof com.real.rail.transit.block.TrackBlock || 
+                                 trackState.isOf(com.real.rail.transit.registry.ModBlocks.TRACK);
+                
+                if (!isValid) {
+                    context.player().sendMessage(net.minecraft.text.Text.translatable(
+                        "gui.real-rail-transit-mod.train_panel.place_train.invalid_position"), false);
+                    return;
+                }
+                
+                // 检查放置位置和上方是否有空间（至少需要2格高）
+                if (!world.getBlockState(pos).isAir()) {
+                    context.player().sendMessage(net.minecraft.text.Text.translatable(
+                        "gui.real-rail-transit-mod.train_panel.place_train.no_space"), false);
+                    return;
+                }
+                
+                // 检查上方一格是否有空间（列车高度需要）
+                if (!world.getBlockState(pos.up()).isAir()) {
+                    context.player().sendMessage(net.minecraft.text.Text.translatable(
+                        "gui.real-rail-transit-mod.train_panel.place_train.no_space"), false);
+                    return;
+                }
+                
+                // 获取列车配置
+                com.real.rail.transit.addon.AddonManager.TrainConfig trainConfig = 
+                    com.real.rail.transit.addon.AddonManager.getInstance().getLoadedAddons().stream()
+                        .filter(train -> train.train_id.equals(trainId))
+                        .findFirst()
+                        .orElse(null);
+                
+                if (trainConfig == null) {
+                    context.player().sendMessage(net.minecraft.text.Text.translatable(
+                        "gui.real-rail-transit-mod.train_panel.place_train.train_not_found"), false);
+                    return;
+                }
+                
+                // 创建列车实体
+                com.real.rail.transit.entity.TrainEntity train = new com.real.rail.transit.entity.TrainEntity(
+                    com.real.rail.transit.registry.ModEntities.TRAIN,
+                    world
+                );
+                train.setPosition(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+                train.setTrainId(trainId);
+                // 设置列车属性
+                train.setMaxSpeed(trainConfig.max_speed / 3.6); // 转换为 m/s
+                train.setAcceleration(trainConfig.acceleration);
+                train.setDeceleration(trainConfig.deceleration);
+                
+                // 更新边界框（根据列车配置）
+                train.updateBoundingBox();
+                
+                // 生成列车到世界
+                world.spawnEntity(train);
+                
+                String trainName = trainConfig.train_name != null ? trainConfig.train_name : trainConfig.train_id;
+                context.player().sendMessage(net.minecraft.text.Text.translatable(
+                    "gui.real-rail-transit-mod.train_panel.place_train.success", trainName), false);
+            });
+        });
+        
+        // 注册列车控制网络包处理器
+        ServerPlayNetworking.registerGlobalReceiver(TrainControlPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                var world = context.player().getWorld();
+                Entity entity = world.getEntityById(payload.trainId());
+                
+                if (entity == null || !(entity instanceof com.real.rail.transit.entity.TrainEntity train)) {
+                    return;
+                }
+                
+                // 检查玩家是否手持钥匙
+                var player = context.player();
+                boolean hasKey = player.getStackInHand(net.minecraft.util.Hand.MAIN_HAND).isOf(com.real.rail.transit.registry.ModItems.SHIELD_DOOR_KEY) ||
+                               player.getStackInHand(net.minecraft.util.Hand.OFF_HAND).isOf(com.real.rail.transit.registry.ModItems.SHIELD_DOOR_KEY);
+                
+                if (!hasKey) {
+                    return;
+                }
+                
+                // 检查玩家是否在列车附近（5格内）
+                double distance = player.squaredDistanceTo(train);
+                if (distance > 25.0) {
+                    return;
+                }
+                
+                // 处理控制输入
+                switch (payload.type()) {
+                    case FORWARD:
+                        if (payload.pressed()) {
+                            train.setDirection(com.real.rail.transit.entity.TrainEntity.Direction.FORWARD);
+                            train.setEngineOn(true);
+                        }
+                        break;
+                    case BACKWARD:
+                        if (payload.pressed()) {
+                            train.setDirection(com.real.rail.transit.entity.TrainEntity.Direction.BACKWARD);
+                            train.setEngineOn(true);
+                        }
+                        break;
+                    case THROTTLE_UP:
+                        if (payload.pressed()) {
+                            double newSpeed = Math.min(train.getTargetSpeed() + 2.0, train.getMaxSpeed());
+                            train.setTargetSpeed(newSpeed);
+                        }
+                        break;
+                    case THROTTLE_DOWN:
+                        if (payload.pressed()) {
+                            double newSpeed = Math.max(train.getTargetSpeed() - 2.0, 0.0);
+                            train.setTargetSpeed(newSpeed);
+                        }
+                        break;
+                    case DOOR_LEFT:
+                        if (payload.pressed()) {
+                            // 触发左门开关（需要实现车门系统）
+                            // train.toggleLeftDoor();
+                        }
+                        break;
+                    case DOOR_RIGHT:
+                        if (payload.pressed()) {
+                            // 触发右门开关（需要实现车门系统）
+                            // train.toggleRightDoor();
+                        }
+                        break;
                 }
             });
         });
@@ -871,6 +1022,74 @@ public class ModNetworkPackets {
             net.minecraft.network.codec.PacketCodecs.STRING, StationConstructionBatchApplyPayload::facilityType,
             net.minecraft.network.codec.PacketCodecs.STRING, StationConstructionBatchApplyPayload::config,
             StationConstructionBatchApplyPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record PlaceTrainPayload(BlockPos pos, String trainId) implements CustomPayload {
+        public static final Id<PlaceTrainPayload> ID = new Id<>(PLACE_TRAIN);
+        public static final PacketCodec<RegistryByteBuf, PlaceTrainPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, PlaceTrainPayload::pos,
+            net.minecraft.network.codec.PacketCodecs.STRING, PlaceTrainPayload::trainId,
+            PlaceTrainPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    /**
+     * 列车控制类型枚举
+     */
+    public enum TrainControlType {
+        FORWARD,        // 前进
+        BACKWARD,       // 后退
+        THROTTLE_UP,    // 增加油门
+        THROTTLE_DOWN,  // 减少油门
+        DOOR_LEFT,      // 左门
+        DOOR_RIGHT      // 右门
+    }
+    
+    public record TrainControlPayload(int trainId, TrainControlType type, boolean pressed) implements CustomPayload {
+        public static final Id<TrainControlPayload> ID = new Id<>(TRAIN_CONTROL);
+        public static final PacketCodec<RegistryByteBuf, TrainControlPayload> CODEC = new PacketCodec<RegistryByteBuf, TrainControlPayload>() {
+            @Override
+            public TrainControlPayload decode(RegistryByteBuf buf) {
+                int trainId = buf.readVarInt();
+                String typeName = buf.readString();
+                TrainControlType type = TrainControlType.valueOf(typeName);
+                boolean pressed = buf.readBoolean();
+                return new TrainControlPayload(trainId, type, pressed);
+            }
+            
+            @Override
+            public void encode(RegistryByteBuf buf, TrainControlPayload value) {
+                buf.writeVarInt(value.trainId());
+                buf.writeString(value.type().name());
+                buf.writeBoolean(value.pressed());
+            }
+        };
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    public record TrainSpeedUpdatePayload(int trainId, double currentSpeed, double targetSpeed, double maxSpeed) implements CustomPayload {
+        public static final Id<TrainSpeedUpdatePayload> ID = new Id<>(TRAIN_SPEED_UPDATE);
+        public static final PacketCodec<RegistryByteBuf, TrainSpeedUpdatePayload> CODEC = PacketCodec.tuple(
+            net.minecraft.network.codec.PacketCodecs.VAR_INT, TrainSpeedUpdatePayload::trainId,
+            net.minecraft.network.codec.PacketCodecs.DOUBLE, TrainSpeedUpdatePayload::currentSpeed,
+            net.minecraft.network.codec.PacketCodecs.DOUBLE, TrainSpeedUpdatePayload::targetSpeed,
+            net.minecraft.network.codec.PacketCodecs.DOUBLE, TrainSpeedUpdatePayload::maxSpeed,
+            TrainSpeedUpdatePayload::new
         );
         
         @Override

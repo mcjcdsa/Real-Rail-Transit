@@ -1,6 +1,7 @@
 package com.real.rail.transit.registry;
 
 import com.real.rail.transit.RealRailTransitMod;
+import com.real.rail.transit.item.ControlPanelItem;
 import com.real.rail.transit.item.PresetItem;
 import com.real.rail.transit.item.SettingControllerItem;
 import com.real.rail.transit.item.ShieldDoorKeyItem;
@@ -10,6 +11,7 @@ import com.real.rail.transit.item.TicketCardItem;
 import com.real.rail.transit.item.TrackBrushItem;
 import com.real.rail.transit.item.TrackConstructionControlPanelItem;
 import com.real.rail.transit.item.TrackControlPanelItem;
+import com.real.rail.transit.item.TrainPanelItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -50,6 +52,14 @@ public class ModItems {
     // 线路控制面板（只能右键打开GUI，不能放置）
     public static final Item TRACK_CONTROL_PANEL = registerItem("track_control_panel",
         new TrackControlPanelItem(new Item.Settings()));
+    
+    // 列车面板（只能右键打开GUI，不能放置）
+    public static final Item TRAIN_PANEL = registerItem("train_panel",
+        new TrainPanelItem(new Item.Settings()));
+    
+    // 控制面板（只能右键打开GUI，不能放置）
+    public static final Item CONTROL_PANEL = registerItem("control_panel",
+        new ControlPanelItem(new Item.Settings()));
     
     // 票卡（用于刷闸机进站，不能放置）
     public static final Item TICKET_CARD = registerItem("ticket_card",

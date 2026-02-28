@@ -1,7 +1,13 @@
 {
-  "parent": "block/cube_all",
+  "parent": "block/cube",
   "textures": {
-    "all": "minecraft:block/iron_block"
+    "particle": "minecraft:block/command_block_back",
+    "down": "minecraft:block/iron_block",
+    "up": "minecraft:block/command_block_back",
+    "north": "minecraft:block/command_block_front",
+    "south": "minecraft:block/command_block_back",
+    "east": "minecraft:block/command_block_side",
+    "west": "minecraft:block/command_block_side"
   }
 }
 

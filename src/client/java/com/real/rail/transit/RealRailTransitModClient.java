@@ -3,6 +3,13 @@ package com.real.rail.transit;
 import com.real.rail.transit.client.renderer.ModBlockEntityRenderers;
 import com.real.rail.transit.client.renderer.PresetRenderer;
 import com.real.rail.transit.client.renderer.TrainEntityRenderer;
+import com.real.rail.transit.client.renderer.TrainPlacementRenderer;
+import com.real.rail.transit.client.TrainPlacementHandler;
+import com.real.rail.transit.client.TrainPlacementConfig;
+import com.real.rail.transit.client.TrainControlConfig;
+import com.real.rail.transit.client.TrainControlHandler;
+import com.real.rail.transit.client.hud.TrainSpeedHUD;
+import com.real.rail.transit.client.hud.TrainPlacementHUD;
 import com.real.rail.transit.client.screen.ModScreens;
 import com.real.rail.transit.network.ModNetworkPackets;
 import com.real.rail.transit.registry.ModEntities;
@@ -37,6 +44,29 @@ public class RealRailTransitModClient implements ClientModInitializer {
 			PresetRenderer.render(context.matrixStack(), context.camera());
 		});
 		
+		// 注册列车放置预览渲染器
+		WorldRenderEvents.AFTER_TRANSLUCENT.register((WorldRenderContext context) -> {
+			TrainPlacementRenderer.render(context.matrixStack(), context.camera());
+		});
+		
+		// 注册列车放置键位绑定
+		TrainPlacementConfig.register();
+		
+		// 注册列车放置处理器
+		TrainPlacementHandler.register();
+		
+		// 注册列车放置HUD
+		TrainPlacementHUD.register();
+		
+		// 注册列车控制键位绑定
+		TrainControlConfig.register();
+		
+		// 注册列车控制处理器
+		TrainControlHandler.register();
+		
+		// 注册列车速度HUD
+		TrainSpeedHUD.register();
+		
 		// 初始化音效系统
 		SoundSystem.initialize();
 		
@@ -54,6 +84,12 @@ public class RealRailTransitModClient implements ClientModInitializer {
 			(payload, context) -> {
 				// 这个接收器会在TrackControlPanelScreen中重新注册以访问Screen实例
 				// 这里可以处理全局的统计数据更新
+			});
+		
+		// 注册列车速度更新接收器
+		ClientPlayNetworking.registerGlobalReceiver(ModNetworkPackets.TrainSpeedUpdatePayload.ID,
+			(payload, context) -> {
+				TrainSpeedHUD.updateSpeed(payload.trainId(), payload.currentSpeed(), payload.targetSpeed(), payload.maxSpeed());
 			});
 	}
 }

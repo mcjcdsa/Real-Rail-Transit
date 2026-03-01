@@ -9,8 +9,8 @@
 	],
 	"contact": {
 		"homepage": "https://gitee.com/blkdg/real-rail-transit-mod",
-		"sources": "https://gitee.com/blkdg/real-rail-transit-mod.git",
-		"issues": "https://gitee.com/blkdg/real-rail-transit-mod/issues",
+		"sources": "https://github.com/mcjcdsa/Real-Rail-Transit.git",
+		"issues": "https://github.com/mcjcdsa/Real-Rail-Transit/issues",
 		"email": "706025513@qq.com"
 	},
 	"license": "CC0-1.0",

@@ -192,3 +192,16 @@ src/client/java/com/real/rail/transit/
 
 - 项目主页: https://gitee.com/blkdg/real-rail-transit-mod
 - 源代码: https://gitee.com/blkdg/real-rail-transit-mod.git
+
+## 反馈与问题
+
+如果您在使用过程中遇到问题、有建议或想要反馈，欢迎通过以下方式联系我们：
+
+- **邮箱**: 706025513@qq.com
+- **Gitee Issues**: [提交 Issue](https://gitee.com/blkdg/real-rail-transit-mod/issues)
+
+反馈时请尽量包含以下信息：
+- Minecraft 版本
+- 模组版本
+- 问题描述或建议内容
+- 相关截图或日志（如有）

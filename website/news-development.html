@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Rail Transit 模组开发进展报告 - Real Rail Transit</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/main.js" defer></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-brand">
+                    <h1>Real Rail Transit</h1>
+                    <p class="subtitle">专业轨道交通模拟模组</p>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">首页</a></li>
+                    <li><a href="download.html">下载</a></li>
+                    <li><a href="news.html" class="active">新闻公告</a></li>
+                    <li><a href="about.html">关于</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <div class="container">
+                <a href="news.html" class="back-link">← 返回新闻列表</a>
+            </div>
+        </section>
+
+        <article class="news-detail">
+            <div class="container">
+                <header class="news-header">
+                    <div class="news-meta">
+                        <span class="news-date">2026年3月1日</span>
+                        <span class="news-category">开发进展</span>
+                    </div>
+                    <h1>Real Rail Transit 模组开发进展报告</h1>
+                </header>
+
+                <div class="news-content">
+                    <p>Real Rail Transit 模组制作工作室今日发布最新开发进展报告，向广大玩家和开发者展示模组当前的开发状态和已完成的核心功能。虽然模组尚未正式发布，但开发团队已经完成了大量核心功能的实现，为未来的正式发布奠定了坚实基础。</p>
+
+                    <h2>已完成的核心功能</h2>
+
+                    <h3>1. 基础框架与架构</h3>
+                    <p>模组的基础框架已经完整搭建，包括：</p>
+                    <ul>
+                        <li>✅ 基于 Minecraft Java 1.20.6 和 Fabric 框架的完整模组架构</li>
+                        <li>✅ 核心包结构创建，包括服务端和客户端代码分离</li>
+                        <li>✅ 完整的方块、物品、实体注册系统</li>
+                        <li>✅ 网络数据包同步机制</li>
+                    </ul>
+
+                    <h3>2. 方块系统（26个方块）</h3>
+                    <p>已完成26个功能方块的实现，包括：</p>
+                    <ul>
+                        <li><strong>线路建设类（5个）</strong>：轨道、信号机、转辙器、第三轨、接触网</li>
+                        <li><strong>车站设施类（10个）</strong>：高架屏蔽门、半高屏蔽门、电梯、自动扶梯、显示屏、到站显示屏、售票机、闸机、小电视、车站广播器</li>
+                        <li><strong>车站建筑类（9个）</strong>：栏杆、楼梯台阶、玻璃墙、瓷砖墙、天花板、带灯天花板、广告牌、灭火器、消防水</li>
+                        <li><strong>控制与工具类（2个）</strong>：司机钥匙、道机机器</li>
+                    </ul>
+
+                    <h3>3. 核心系统（9个系统）</h3>
+                    <p>已完成9个核心系统的开发：</p>
+                    <ul>
+                        <li><strong>信号系统</strong> (`SignalSystem`) - 信号机状态管理，支持红、绿、黄、引导等标准显示状态</li>
+                        <li><strong>供电系统</strong> (`PowerSystem`) - 第三轨和接触网供电管理，支持分区控制</li>
+                        <li><strong>调度系统</strong> (`DispatchSystem`) - 列车调度和运行管理</li>
+                        <li><strong>列车移动系统</strong> (`TrainMovementSystem`) - 物理移动控制和轨道跟随</li>
+                        <li><strong>驾驶室交互系统</strong> (`CabInteractionSystem`) - 六种驾驶模式支持（ATO、CBTC、ATP、ATC、RM、手动）</li>
+                        <li><strong>轨道网络系统</strong> (`TrackNetwork`) - 轨道连接管理和A*算法路径查找</li>
+                        <li><strong>联锁系统</strong> (`InterlockingSystem`) - 信号机与道岔联锁逻辑，确保运行安全</li>
+                        <li><strong>运行图管理器</strong> (`ScheduleManager`) - 运行图文件管理和调度计划</li>
+                        <li><strong>列车照明系统</strong> (`TrainLightingSystem`) - 动态照明控制和多种照明模式</li>
+                    </ul>
+
+                    <h3>4. 用户界面（13个GUI界面）</h3>
+                    <p>已完成13个功能完整的GUI界面：</p>
+                    <ul>
+                        <li><strong>核心界面</strong>：驾驶室控制界面、运行图管理界面、列车面板界面、追加包管理器界面</li>
+                        <li><strong>控制面板界面</strong>：通用控制面板、轨道控制面板、轨道建设控制面板、车站建设控制面板</li>
+                        <li><strong>车站设施界面</strong>：售票机界面、显示屏界面、到站显示屏界面、车站广播界面、道机机器界面</li>
+                    </ul>
+
+                    <h3>5. 追加包系统</h3>
+                    <p>实现了完整的追加包支持系统：</p>
+                    <ul>
+                        <li>✅ 追加包管理器，支持加载和管理自定义列车追加包</li>
+                        <li>✅ MTR 追加包转换功能，可以将 MTR 模组的追加包转换为本模组格式</li>
+                        <li>✅ BB 模型加载和渲染系统，支持 Blockbench 模型文件</li>
+                        <li>✅ 追加包资源管理，支持模型、贴图、音效等资源</li>
+                    </ul>
+
+                    <h3>6. 客户端渲染系统</h3>
+                    <p>完成了完整的客户端渲染功能：</p>
+                    <ul>
+                        <li>✅ 列车实体渲染器</li>
+                        <li>✅ 信号机灯光渲染</li>
+                        <li>✅ 世界地图渲染器</li>
+                        <li>✅ 完整的方块模型和状态文件</li>
+                    </ul>
+
+                    <h3>7. 音效系统</h3>
+                    <p>集成了完整的音效系统框架，支持：</p>
+                    <ul>
+                        <li>列车运行音效（走行音、撞轨音频、受电弓/第三轨取流音）</li>
+                        <li>操作音效（开关门音效、制动音效、驾驶室操作音）</li>
+                        <li>提示音效（报警音、到站提示音、信号提示音）</li>
+                    </ul>
+
+                    <h3>8. 调试与运行支持</h3>
+                    <p>实现了完善的调试和运行日志系统：</p>
+                    <ul>
+                        <li>✅ 模组运行日志系统，支持正常（绿色）、警告（黄色）、错误（红色）三级等级</li>
+                        <li>✅ 关键事件记录功能，记录列车发车、进路排列、运行图加载等重要事件</li>
+                        <li>✅ 游戏内指令 `/rrtlog` 查看运行日志</li>
+                        <li>✅ 游戏内指令 `/rrtaddon` 打开追加包创建网站</li>
+                    </ul>
+
+                    <h2>开发中的功能</h2>
+                    <p>开发团队正在积极推进以下功能的完善：</p>
+                    <ul>
+                        <li>⏳ 方块模型和贴图资源优化</li>
+                        <li>⏳ 音效文件（.ogg格式）完善</li>
+                        <li>⏳ 列车物理移动优化</li>
+                        <li>⏳ 更多交互功能</li>
+                        <li>⏳ 多人联机同步优化</li>
+                        <li>⏳ 数据持久化系统升级</li>
+                    </ul>
+
+                    <h2>技术规格</h2>
+                    <p>模组基于以下技术栈开发：</p>
+                    <ul>
+                        <li><strong>Minecraft 版本</strong>：1.20.6</li>
+                        <li><strong>运行框架</strong>：Fabric</li>
+                        <li><strong>Java 版本</strong>：JDK 21 或更高</li>
+                        <li><strong>Fabric Loader</strong>：0.18.4 或更高</li>
+                        <li><strong>Fabric API</strong>：0.100.8+1.20.6 或更高</li>
+                    </ul>
+
+                    <h2>预计发布时间</h2>
+                    <p>根据当前开发进度和功能完善计划，<strong>Real Rail Transit 模组的首个版本预计不早于 2026年12月 发布</strong>。开发团队将在此期间继续完善各项功能，确保模组质量和稳定性，为玩家提供最佳的轨道交通体验。</p>
+                    <p>具体的发布日期将根据开发进度和测试情况确定，我们会在官方社交账号及时发布最新消息，敬请关注！</p>
+
+                    <h2>下一步计划</h2>
+                    <p>开发团队将继续完善模组功能，重点包括：</p>
+                    <ul>
+                        <li>完善资源文件（模型、贴图、音效）</li>
+                        <li>优化列车物理移动和碰撞检测</li>
+                        <li>增强多人联机同步稳定性</li>
+                        <li>完善数据持久化系统</li>
+                        <li>进行全面的功能测试和性能优化</li>
+                    </ul>
+
+                    <h2>结语</h2>
+                    <p>Real Rail Transit 模组虽然尚未正式发布，但开发团队已经完成了大量核心功能的实现。我们致力于打造一个专业、真实、功能完善的轨道交通模拟模组，为玩家提供最接近现实的轨道交通体验。感谢所有关注和支持我们的玩家和开发者，我们会继续努力，争取早日发布正式版本！</p>
+
+                    <p>更多开发进展和最新动态，请关注我们的官方社交账号：</p>
+                    <ul>
+                        <li>官方QQ交流群①：1081326011</li>
+                        <li>官方微博：https://weibo.com/u/7928929999</li>
+                        <li>哔哩哔哩：https://b23.tv/h0zlbkh</li>
+                        <li>官方QQ频道：https://pd.qq.com/s/hk04mn5bi?b=9</li>
+                    </ul>
+                </div>
+
+                <div class="news-footer">
+                    <div class="news-tags">
+                        <span class="tag">开发进展</span>
+                        <span class="tag">功能更新</span>
+                        <span class="tag">技术报告</span>
+                    </div>
+                    <div class="news-share">
+                        <p>分享这篇文章:</p>
+                        <a href="#" class="share-link">复制链接</a>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <section class="related-news">
+            <div class="container">
+                <h2>相关新闻</h2>
+                <div class="related-list">
+                    <a href="news-detail.html" class="related-item">未发先立规 Real Rail Transit模组发布追加包使用购买条约初稿 →</a>
+                    <a href="news.html" class="related-item">查看更多新闻 →</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Real Rail Transit</h3>
+                    <p>专业轨道交通模拟模组</p>
+                </div>
+                <div class="footer-section">
+                    <h4>快速链接</h4>
+                    <ul>
+                        <li><a href="download.html">下载模组</a></li>
+                        <li><a href="news.html">新闻公告</a></li>
+                        <li><a href="about.html">关于我们</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>联系方式</h4>
+                    <ul>
+                        <li>邮箱: <a href="mailto:706025513@qq.com">706025513@qq.com</a></li>
+                        <li>项目主页: <a href="https://gitee.com/blkdg/real-rail-transit-mod" target="_blank" rel="noopener">Gitee</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>官方社交账号</h4>
+                    <ul>
+                        <li>QQ交流群①: <a href="https://qm.qq.com/q/1081326011" target="_blank" rel="noopener">1081326011</a></li>
+                        <li>官方微博: <a href="https://weibo.com/u/7928929999" target="_blank" rel="noopener">关注我们</a></li>
+                        <li>哔哩哔哩: <a href="https://b23.tv/h0zlbkh" target="_blank" rel="noopener">官方账号</a></li>
+                        <li>QQ频道: <a href="https://pd.qq.com/s/hk04mn5bi?b=9" target="_blank" rel="noopener">加入频道</a></li>
+                    </ul>
+                    <p class="footer-notice">⚠️ 请认准官方账号，其它未认证账号均为冒充</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Real Rail Transit 模组制作工作室. 采用 CC0-1.0 许可证.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

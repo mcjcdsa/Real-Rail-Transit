@@ -3,13 +3,15 @@
 	"id": "real-rail-transit-mod",
 	"version": "${version}",
 	"name": "Real Rail Transit",
-	"description": "高度还原真实轨道交通系统的专业级模组，提供完整的列车驾驶、信号联锁、调度管理等核心功能",
+	"description": "高度还原真实轨道交通系统的专业级模组，提供完整的列车驾驶系统（六种驾驶模式）、信号联锁系统、调度运行图管理、车站设施、追加包支持（含MTR转换）、BB模型渲染等核心功能",
 	"authors": [
 		"Real Rail Transit 模组制作工作室"
 	],
 	"contact": {
 		"homepage": "https://gitee.com/blkdg/real-rail-transit-mod",
-		"sources": "https://gitee.com/blkdg/real-rail-transit-mod.git"
+		"sources": "https://gitee.com/blkdg/real-rail-transit-mod.git",
+		"issues": "https://gitee.com/blkdg/real-rail-transit-mod/issues",
+		"email": "706025513@qq.com"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/real-rail-transit-mod/icon.png",

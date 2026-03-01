@@ -1,11 +1,15 @@
 package com.real.rail.transit.block;
 
 import com.real.rail.transit.RealRailTransitMod;
+import com.real.rail.transit.block.entity.DaojiMachineBlockEntity;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ShapeContext;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
@@ -15,15 +19,16 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 
 /**
  * 盾构机方块
- * 用于挖掘隧道
+ * 用于挖掘隧道，支持配置隧道大小、类型、材质等
  */
-public class DaojiMachineBlock extends Block {
+public class DaojiMachineBlock extends Block implements BlockEntityProvider {
     private static final VoxelShape SHAPE = Block.createCuboidShape(0.0, 0.0, 0.0, 16.0, 16.0, 16.0);
     
     /**
@@ -46,31 +51,50 @@ public class DaojiMachineBlock extends Block {
         return SHAPE;
     }
     
+    @Override
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new DaojiMachineBlockEntity(pos, state);
+    }
+    
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
-            boolean working = state.get(WORKING);
-            
-            if (working) {
-                // 停止挖掘
-                world.setBlockState(pos, state.with(WORKING, false));
-                player.sendMessage(Text.translatable("block.real-rail-transit-mod.daoji_machine.stopped"), false);
-            } else {
-                // 开始挖掘（向前挖掘）
-                BlockPos digPos = pos.offset(hit.getSide());
-                if (canDig(world, digPos)) {
-                    world.setBlockState(pos, state.with(WORKING, true));
-                    digTunnel(world, digPos, hit.getSide());
-                    world.playSound(null, pos, SoundEvents.BLOCK_STONE_BREAK, SoundCategory.BLOCKS, 1.0f, 1.0f);
-                    player.sendMessage(Text.translatable("block.real-rail-transit-mod.daoji_machine.digging",
-                        digPos.getX(), digPos.getY(), digPos.getZ()), false);
-                } else {
-                    player.sendMessage(Text.translatable("block.real-rail-transit-mod.daoji_machine.cannot_dig"), false);
+            BlockEntity be = world.getBlockEntity(pos);
+            if (be instanceof DaojiMachineBlockEntity entity) {
+                // 打开配置界面
+                try {
+                    NamedScreenHandlerFactory screenHandlerFactory = createScreenHandlerFactory(state, world, pos);
+                    if (screenHandlerFactory != null) {
+                        player.openHandledScreen(screenHandlerFactory);
+                    }
+                } catch (Exception e) {
+                    RealRailTransitMod.LOGGER.error("打开盾构机GUI时出错", e);
+                    player.sendMessage(Text.literal("打开配置界面失败: " + e.getMessage()), false);
                 }
+            } else {
+                player.sendMessage(Text.translatable("block.real-rail-transit-mod.daoji_machine.error"), false);
             }
-            
             return ActionResult.SUCCESS;
         }
         return ActionResult.SUCCESS;
+    }
+    
+    public NamedScreenHandlerFactory createScreenHandlerFactory(BlockState state, World world, BlockPos pos) {
+        BlockPos finalPos = pos.toImmutable();
+        return new NamedScreenHandlerFactory() {
+            @Override
+            public Text getDisplayName() {
+                return Text.translatable("gui.real-rail-transit-mod.daoji_machine.title");
+            }
+
+            @Override
+            public net.minecraft.screen.ScreenHandler createMenu(int syncId, net.minecraft.entity.player.PlayerInventory inventory, net.minecraft.entity.player.PlayerEntity player) {
+                return new com.real.rail.transit.block.screen.DaojiMachineScreenHandler(syncId, inventory, finalPos);
+            }
+
+            public void writeScreenOpeningData(PlayerEntity player, net.minecraft.network.PacketByteBuf buf) {
+                buf.writeBlockPos(finalPos);
+            }
+        };
     }
     
     /**

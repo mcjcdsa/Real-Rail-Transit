@@ -6,6 +6,9 @@ import com.real.rail.transit.client.renderer.TrainEntityRenderer;
 import com.real.rail.transit.client.renderer.TrainPlacementRenderer;
 import com.real.rail.transit.client.TrainPlacementHandler;
 import com.real.rail.transit.client.TrainPlacementConfig;
+import com.real.rail.transit.client.AddonManagerConfig;
+import com.real.rail.transit.client.AddonManagerHandler;
+import com.real.rail.transit.client.ModLanguageConfig;
 import com.real.rail.transit.client.TrainControlConfig;
 import com.real.rail.transit.client.TrainControlHandler;
 import com.real.rail.transit.client.hud.TrainSpeedHUD;
@@ -67,8 +70,17 @@ public class RealRailTransitModClient implements ClientModInitializer {
 		// 注册列车速度HUD
 		TrainSpeedHUD.register();
 		
+		// 注册追加包管理键位绑定
+		AddonManagerConfig.register();
+		
+		// 注册追加包管理处理器
+		AddonManagerHandler.register();
+		
 		// 初始化音效系统
 		SoundSystem.initialize();
+		
+		// 加载语言配置
+		ModLanguageConfig.load();
 		
 		RealRailTransitMod.LOGGER.info("Real Rail Transit 模组客户端初始化完成！");
 	}

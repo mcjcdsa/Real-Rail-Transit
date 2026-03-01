@@ -2,6 +2,7 @@ package com.real.rail.transit.registry;
 
 import com.real.rail.transit.RealRailTransitMod;
 import com.real.rail.transit.item.ControlPanelItem;
+import com.real.rail.transit.item.DriverKeyItem;
 import com.real.rail.transit.item.PresetItem;
 import com.real.rail.transit.item.SettingControllerItem;
 import com.real.rail.transit.item.ShieldDoorKeyItem;
@@ -64,6 +65,10 @@ public class ModItems {
     // 票卡（用于刷闸机进站，不能放置）
     public static final Item TICKET_CARD = registerItem("ticket_card",
         new TicketCardItem(new Item.Settings().maxCount(64)));
+    
+    // 司机钥匙（用于启动列车，不能放置）
+    public static final Item DRIVER_KEY = registerItem("driver_key",
+        new DriverKeyItem(new Item.Settings()));
     
     /**
      * 注册物品

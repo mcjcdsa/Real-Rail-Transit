@@ -34,9 +34,12 @@ public class TrainPanelScreen extends HandledScreen<TrainPanelScreenHandler> {
     private ButtonWidget refreshButton;
     private ButtonWidget closeButton;
     private ButtonWidget placeButton;
+    private ButtonWidget importButton;
     private TextFieldWidget searchField;
     private String searchText = "";
     private boolean isDraggingScrollbar = false;
+    private String statusMessage = "";
+    private long statusMessageTime = 0;
 
     public TrainPanelScreen(TrainPanelScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -78,6 +81,13 @@ public class TrainPanelScreen extends HandledScreen<TrainPanelScreenHandler> {
         ).dimensions(centerX - 85, buttonY, 80, 20).build();
         this.addDrawableChild(refreshButton);
 
+        // 导入列车文件夹按钮
+        importButton = ButtonWidget.builder(
+            Text.translatable("gui.real-rail-transit-mod.train_panel.import_folder"),
+            button -> importTrainFolder()
+        ).dimensions(centerX - 170, buttonY, 80, 20).build();
+        this.addDrawableChild(importButton);
+
         closeButton = ButtonWidget.builder(
             Text.translatable("gui.real-rail-transit-mod.close"),
             button -> this.close()
@@ -94,13 +104,111 @@ public class TrainPanelScreen extends HandledScreen<TrainPanelScreenHandler> {
                     this.close();
                 }
             }
-        ).dimensions(centerX - 170, buttonY, 80, 20).build();
+        ).dimensions(centerX - 255, buttonY, 80, 20).build();
         this.addDrawableChild(placeButton);
     }
 
     private void loadTrains() {
         allTrains = AddonManager.getInstance().getLoadedAddons();
         filterTrains();
+    }
+
+    /**
+     * 导入列车文件夹（使用文件夹选择对话框）
+     */
+    private void importTrainFolder() {
+        com.real.rail.transit.RealRailTransitMod.LOGGER.info("开始导入列车文件夹...");
+        setStatusMessage("正在打开文件夹选择对话框...", 60);
+        
+        // 在新线程中打开文件选择对话框，避免阻塞渲染线程
+        new Thread(() -> {
+            try {
+                // 使用系统文件夹选择对话框
+                java.awt.EventQueue.invokeAndWait(() -> {
+                    try {
+                        javax.swing.JFileChooser folderChooser = new javax.swing.JFileChooser();
+                        folderChooser.setDialogTitle("选择列车追加包文件夹");
+                        folderChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
+                        folderChooser.setMultiSelectionEnabled(false);
+                        
+                        // 设置初始目录为游戏目录
+                        try {
+                            java.nio.file.Path gameDir = net.fabricmc.loader.api.FabricLoader.getInstance()
+                                .getGameDir();
+                            folderChooser.setCurrentDirectory(gameDir.toFile());
+                        } catch (Exception e) {
+                            com.real.rail.transit.RealRailTransitMod.LOGGER.debug("设置初始目录失败", e);
+                        }
+                        
+                        int result = folderChooser.showOpenDialog(null);
+                        if (result == javax.swing.JFileChooser.APPROVE_OPTION) {
+                            java.io.File selectedFolder = folderChooser.getSelectedFile();
+                            if (selectedFolder != null && selectedFolder.isDirectory()) {
+                                com.real.rail.transit.RealRailTransitMod.LOGGER.info("选择了文件夹: {}", selectedFolder.getAbsolutePath());
+                                // 在 Minecraft 主线程中执行安装
+                                net.minecraft.client.MinecraftClient.getInstance().execute(() -> {
+                                    installAddonFolder(selectedFolder.toPath());
+                                });
+                            } else {
+                                com.real.rail.transit.RealRailTransitMod.LOGGER.warn("选择的不是文件夹: {}", selectedFolder);
+                                net.minecraft.client.MinecraftClient.getInstance().execute(() -> {
+                                    setStatusMessage("请选择文件夹", 120);
+                                });
+                            }
+                        } else {
+                            com.real.rail.transit.RealRailTransitMod.LOGGER.debug("用户取消了文件夹选择");
+                            net.minecraft.client.MinecraftClient.getInstance().execute(() -> {
+                                setStatusMessage("已取消选择", 60);
+                            });
+                        }
+                    } catch (Exception e) {
+                        com.real.rail.transit.RealRailTransitMod.LOGGER.error("打开文件夹选择对话框失败", e);
+                        net.minecraft.client.MinecraftClient.getInstance().execute(() -> {
+                            setStatusMessage("打开对话框失败: " + e.getMessage(), 120);
+                        });
+                    }
+                });
+            } catch (Exception e) {
+                com.real.rail.transit.RealRailTransitMod.LOGGER.error("执行文件夹选择对话框失败", e);
+                net.minecraft.client.MinecraftClient.getInstance().execute(() -> {
+                    setStatusMessage("执行失败: " + e.getMessage(), 120);
+                });
+            }
+        }, "RRT-FolderChooser").start();
+    }
+
+    /**
+     * 安装追加包文件夹
+     */
+    private void installAddonFolder(java.nio.file.Path folderPath) {
+        new Thread(() -> {
+            try {
+                setStatusMessage("正在导入: " + folderPath.getFileName(), 0);
+                
+                boolean success = AddonManager.getInstance().installAddon(folderPath);
+                
+                if (success) {
+                    setStatusMessage("导入成功: " + folderPath.getFileName(), 120);
+                    // 重新加载追加包
+                    AddonManager.getInstance().loadAllAddons();
+                    // 刷新列车列表
+                    loadTrains();
+                } else {
+                    setStatusMessage("导入失败: " + folderPath.getFileName(), 120);
+                }
+            } catch (Exception e) {
+                com.real.rail.transit.RealRailTransitMod.LOGGER.error("导入追加包文件夹失败", e);
+                setStatusMessage("导入失败: " + e.getMessage(), 120);
+            }
+        }).start();
+    }
+
+    /**
+     * 设置状态消息
+     */
+    private void setStatusMessage(String message, int durationTicks) {
+        this.statusMessage = message;
+        this.statusMessageTime = System.currentTimeMillis() + (durationTicks * 50L); // 50ms per tick
     }
 
     private void filterTrains() {
@@ -290,6 +398,22 @@ public class TrainPanelScreen extends HandledScreen<TrainPanelScreenHandler> {
             context.drawText(this.textRenderer, 
                 String.format("ID: %s", train.train_id), 
                 detailPanelLeft + 6, detailY + 48, 0x888888, false);
+        }
+
+        // 显示状态消息
+        if (!statusMessage.isEmpty() && System.currentTimeMillis() < statusMessageTime) {
+            int messageY = this.height - 50;
+            int messageWidth = this.textRenderer.getWidth(statusMessage);
+            int messageX = centerX - messageWidth / 2;
+            
+            // 绘制背景
+            context.fill(messageX - 4, messageY - 2, messageX + messageWidth + 4, messageY + 12, 0x80000000);
+            context.drawBorder(messageX - 4, messageY - 2, messageWidth + 8, 14, 0xFF404040);
+            
+            // 绘制文本
+            context.drawText(this.textRenderer, statusMessage, messageX, messageY, 0xFFFFFF, false);
+        } else if (System.currentTimeMillis() >= statusMessageTime && !statusMessage.isEmpty()) {
+            statusMessage = ""; // 清除过期消息
         }
     }
 

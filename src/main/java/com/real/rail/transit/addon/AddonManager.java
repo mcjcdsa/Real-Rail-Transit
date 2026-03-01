@@ -50,6 +50,86 @@ public class AddonManager {
     }
     
     /**
+     * 获取已加载的追加包列表
+     */
+    public List<TrainConfig> getLoadedAddons() {
+        return new ArrayList<>(loadedAddons);
+    }
+    
+    /**
+     * 手动安装追加包文件
+     */
+    public boolean installAddon(Path addonFile) {
+        try {
+            Path addonDir = FabricLoader.getInstance().getGameDir().resolve("rrt_addons");
+            
+            if (!Files.exists(addonDir)) {
+                Files.createDirectories(addonDir);
+            }
+            
+            // 如果是ZIP文件，解压到新目录
+            if (addonFile.toString().endsWith(".zip")) {
+                String addonName = addonFile.getFileName().toString()
+                    .replace(".zip", "")
+                    .replaceAll("[^a-zA-Z0-9_\\-]", "_");
+                Path targetDir = addonDir.resolve(addonName);
+                
+                if (Files.exists(targetDir)) {
+                    // 如果已存在，添加时间戳
+                    targetDir = addonDir.resolve(addonName + "_" + System.currentTimeMillis());
+                }
+                
+                extractZipFile(addonFile, targetDir);
+                
+                // 加载追加包
+                loadAddon(targetDir, false);
+                return true;
+            } else {
+                // 直接复制文件
+                Path targetFile = addonDir.resolve(addonFile.getFileName());
+                Files.copy(addonFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                
+                // 如果是目录，直接加载
+                if (Files.isDirectory(addonFile)) {
+                    loadAddon(addonFile, false);
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            RealRailTransitMod.LOGGER.error("安装追加包失败: {}", addonFile, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 解压ZIP文件
+     */
+    private void extractZipFile(Path zipFile, Path targetDir) throws IOException {
+        try (var zipInputStream = new java.util.zip.ZipInputStream(
+                Files.newInputStream(zipFile))) {
+            java.util.zip.ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                Path entryPath = targetDir.resolve(entry.getName());
+                
+                // 安全检查：防止路径遍历攻击
+                if (!entryPath.normalize().startsWith(targetDir.normalize())) {
+                    RealRailTransitMod.LOGGER.warn("跳过不安全的ZIP条目: {}", entry.getName());
+                    continue;
+                }
+                
+                if (entry.isDirectory()) {
+                    Files.createDirectories(entryPath);
+                } else {
+                    Files.createDirectories(entryPath.getParent());
+                    Files.copy(zipInputStream, entryPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+                
+                zipInputStream.closeEntry();
+            }
+        }
+    }
+    
+    /**
      * 加载所有追加包
      */
     public void loadAllAddons() {
@@ -268,8 +348,27 @@ public class AddonManager {
     
     /**
      * 加载单个追加包
+     * 支持两种格式：1.模组格式（train_config.json），2.MTR格式（pack.mcmeta + assets/mtr/）
      */
     private void loadAddon(Path addonPath, boolean isBuiltin) {
+        // 检测追加包类型
+        int addonType = MTRAddonConverter.detectAddonType(addonPath);
+        
+        if (addonType == 1) {
+            // 模组格式追加包
+            loadModFormatAddon(addonPath, isBuiltin);
+        } else if (addonType == 2) {
+            // MTR格式追加包
+            loadMTRFormatAddon(addonPath, isBuiltin);
+        } else {
+            RealRailTransitMod.LOGGER.warn("追加包 {} 格式未知，无法加载", addonPath.getFileName());
+        }
+    }
+    
+    /**
+     * 加载模组格式追加包
+     */
+    private void loadModFormatAddon(Path addonPath, boolean isBuiltin) {
         Path configFile = addonPath.resolve("train_config.json");
         
         if (!Files.exists(configFile)) {
@@ -298,7 +397,7 @@ public class AddonManager {
                 } else {
                     loadedAddons.add(config);
                 }
-                RealRailTransitMod.LOGGER.info("成功加载{}追加包: {} (ID: {})", 
+                RealRailTransitMod.LOGGER.info("成功加载{}追加包（模组格式）: {} (ID: {})", 
                     config.is_builtin ? "内置" : "", 
                     config.train_name, 
                     config.train_id);
@@ -307,6 +406,56 @@ public class AddonManager {
             }
         } catch (IOException e) {
             RealRailTransitMod.LOGGER.error("加载追加包失败: {}", addonPath.getFileName(), e);
+        }
+    }
+    
+    /**
+     * 加载MTR格式追加包
+     */
+    private void loadMTRFormatAddon(Path addonPath, boolean isBuiltin) {
+        String addonName = addonPath.getFileName().toString();
+        RealRailTransitMod.LOGGER.info("检测到MTR格式追加包: {}", addonName);
+        
+        // 使用转换器转换MTR格式
+        List<TrainConfig> mtrConfigs = MTRAddonConverter.convertMTRAddon(addonPath);
+        
+        if (mtrConfigs.isEmpty()) {
+            String warnMsg = "MTR追加包 " + addonName + " 转换后无有效配置";
+            RealRailTransitMod.LOGGER.warn(warnMsg);
+            // 注意：这里无法获取 ServerWorld，所以不记录到运行日志
+            return;
+        }
+        
+        // 加载转换后的配置
+        for (TrainConfig config : mtrConfigs) {
+            // 设置内置标志
+            config.is_builtin = isBuiltin;
+            
+            // 检查是否已加载（避免重复加载）
+            if (loadedAddons.stream().anyMatch(c -> c.train_id.equals(config.train_id))) {
+                RealRailTransitMod.LOGGER.debug("MTR追加包 {} 已加载，跳过", config.train_id);
+                continue;
+            }
+            
+            // 验证配置
+            if (validateConfig(config)) {
+                // 内置追加包优先添加到列表前面
+                if (config.is_builtin) {
+                    loadedAddons.add(0, config);
+                } else {
+                    loadedAddons.add(config);
+                }
+                String successMsg = String.format("成功加载%s追加包（MTR格式）: %s (ID: %s, 模型: %s)", 
+                    config.is_builtin ? "内置" : "", 
+                    config.train_name, 
+                    config.train_id,
+                    config.source_path != null ? config.source_path : "未设置");
+                RealRailTransitMod.LOGGER.info(successMsg);
+                // 注意：这里无法获取 ServerWorld，所以不记录到运行日志
+            } else {
+                String warnMsg = String.format("MTR追加包配置无效: %s (ID: %s)", addonName, config.train_id);
+                RealRailTransitMod.LOGGER.warn(warnMsg);
+            }
         }
     }
     
@@ -322,13 +471,6 @@ public class AddonManager {
             && (config.power_type.equals("catenary") || config.power_type.equals("third_rail"))
             && config.car_length > 0
             && config.car_count > 0;
-    }
-    
-    /**
-     * 获取所有已加载的追加包
-     */
-    public List<TrainConfig> getLoadedAddons() {
-        return new ArrayList<>(loadedAddons);
     }
     
     /**

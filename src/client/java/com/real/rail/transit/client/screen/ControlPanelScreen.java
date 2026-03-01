@@ -1,13 +1,17 @@
 package com.real.rail.transit.client.screen;
 
 import com.real.rail.transit.block.screen.ControlPanelScreenHandler;
+import com.real.rail.transit.client.renderer.WorldMapRenderer;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +39,20 @@ public class ControlPanelScreen extends HandledScreen<ControlPanelScreenHandler>
 
     private List<Area> areas = new ArrayList<>();
     private Area currentDrawingArea = null;
-    private String currentTab = "station"; // "station", "depot", "route"
+    private String currentTab = "station"; // "station", "depot", "route", "map"
+    
+    // 世界地图渲染器
+    private WorldMapRenderer worldMapRenderer = new WorldMapRenderer();
+    private boolean showWorldMap = false;
     
     // UI组件
     private ButtonWidget stationTabButton;
     private ButtonWidget depotTabButton;
     private ButtonWidget routeTabButton;
+    private ButtonWidget mapTabButton;
+    private ButtonWidget zoomInButton;
+    private ButtonWidget zoomOutButton;
+    private ButtonWidget resetViewButton;
     private TextFieldWidget nameField;
     private ButtonWidget colorButton;
     private ButtonWidget startDrawingButton;
@@ -100,6 +112,36 @@ public class ControlPanelScreen extends HandledScreen<ControlPanelScreenHandler>
             button -> switchTab("route")
         ).dimensions(leftX + 130, startY, 60, 20).build();
         this.addDrawableChild(routeTabButton);
+        
+        mapTabButton = ButtonWidget.builder(
+            Text.translatable("gui.real-rail-transit-mod.control_panel.tab.map"),
+            button -> switchTab("map")
+        ).dimensions(leftX + 195, startY, 60, 20).build();
+        this.addDrawableChild(mapTabButton);
+        
+        startY += 30;
+        
+        // 地图控制按钮（仅在地图模式下显示）
+        zoomInButton = ButtonWidget.builder(
+            Text.literal("+"),
+            button -> worldMapRenderer.setZoom(worldMapRenderer.getZoom() * 1.2f)
+        ).dimensions(leftX, startY, 30, 20).build();
+        this.addDrawableChild(zoomInButton);
+        zoomInButton.visible = false;
+        
+        zoomOutButton = ButtonWidget.builder(
+            Text.literal("-"),
+            button -> worldMapRenderer.setZoom(worldMapRenderer.getZoom() / 1.2f)
+        ).dimensions(leftX + 35, startY, 30, 20).build();
+        this.addDrawableChild(zoomOutButton);
+        zoomOutButton.visible = false;
+        
+        resetViewButton = ButtonWidget.builder(
+            Text.translatable("gui.real-rail-transit-mod.control_panel.reset_view"),
+            button -> resetMapView()
+        ).dimensions(leftX + 70, startY, 50, 20).build();
+        this.addDrawableChild(resetViewButton);
+        resetViewButton.visible = false;
         
         startY += 30;
         
@@ -184,6 +226,30 @@ public class ControlPanelScreen extends HandledScreen<ControlPanelScreenHandler>
         stationTabButton.active = !currentTab.equals("station");
         depotTabButton.active = !currentTab.equals("depot");
         routeTabButton.active = !currentTab.equals("route");
+        mapTabButton.active = !currentTab.equals("map");
+        
+        // 更新地图控制按钮的可见性
+        boolean isMapMode = currentTab.equals("map");
+        zoomInButton.visible = isMapMode;
+        zoomOutButton.visible = isMapMode;
+        resetViewButton.visible = isMapMode;
+        
+        // 在地图模式下隐藏其他控件
+        nameField.visible = !isMapMode;
+        colorButton.visible = !isMapMode;
+        startDrawingButton.visible = !isMapMode;
+        finishDrawingButton.visible = !isMapMode;
+        clearButton.visible = !isMapMode;
+        saveButton.visible = !isMapMode;
+    }
+    
+    private void resetMapView() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player != null) {
+            BlockPos playerPos = client.player.getBlockPos();
+            worldMapRenderer.setCenter(playerPos.getX(), playerPos.getZ());
+            worldMapRenderer.setZoom(1.0f);
+        }
     }
     
     private void cycleColor() {
@@ -258,26 +324,53 @@ public class ControlPanelScreen extends HandledScreen<ControlPanelScreenHandler>
         context.fill(MAP_X, MAP_Y, MAP_X + MAP_WIDTH, MAP_Y + MAP_HEIGHT, 0x80000000);
         context.drawBorder(MAP_X, MAP_Y, MAP_WIDTH, MAP_HEIGHT, 0xFF404040);
         
-        // 绘制地图标题
-        String mapTitle = currentTab.equals("station") ? "车站范围" : 
-                         (currentTab.equals("depot") ? "车厂范围" : "线路走向");
-        context.drawText(this.textRenderer, mapTitle, MAP_X + 5, MAP_Y - 12, 0xFFFFFF, false);
-        
-        // 绘制已保存的区域
-        for (Area area : areas) {
-            drawArea(context, area);
+        if (currentTab.equals("map")) {
+            // 地图模式：显示世界地图
+            MinecraftClient client = MinecraftClient.getInstance();
+            ClientWorld world = client.world;
+            BlockPos playerPos = client.player != null ? client.player.getBlockPos() : null;
+            
+            // 渲染世界地图
+            worldMapRenderer.renderMap(context, MAP_X, MAP_Y, MAP_WIDTH, MAP_HEIGHT, world, playerPos);
+            
+            // 绘制地图标题
+            context.drawText(this.textRenderer, "世界地图", MAP_X + 5, MAP_Y - 12, 0xFFFFFF, false);
+            
+            // 绘制缩放信息
+            String zoomInfo = String.format("缩放: %.1fx", worldMapRenderer.getZoom());
+            context.drawText(this.textRenderer, zoomInfo, MAP_X + 5, MAP_Y + MAP_HEIGHT + 2, 0xAAAAAA, false);
+            
+            // 绘制坐标信息（鼠标位置）
+            if (mouseX >= MAP_X && mouseX <= MAP_X + MAP_WIDTH &&
+                mouseY >= MAP_Y && mouseY <= MAP_Y + MAP_HEIGHT) {
+                BlockPos worldPos = worldMapRenderer.screenToWorld(
+                    (int) mouseX, (int) mouseY, MAP_X, MAP_Y, MAP_WIDTH, MAP_HEIGHT);
+                String coordInfo = String.format("坐标: %d, %d", worldPos.getX(), worldPos.getZ());
+                context.drawText(this.textRenderer, coordInfo, MAP_X + 5, MAP_Y + MAP_HEIGHT + 14, 0xAAAAAA, false);
+            }
+        } else {
+            // 其他模式：显示区域绘制
+            // 绘制地图标题
+            String mapTitle = currentTab.equals("station") ? "车站范围" : 
+                             (currentTab.equals("depot") ? "车厂范围" : "线路走向");
+            context.drawText(this.textRenderer, mapTitle, MAP_X + 5, MAP_Y - 12, 0xFFFFFF, false);
+            
+            // 绘制已保存的区域
+            for (Area area : areas) {
+                drawArea(context, area);
+            }
+            
+            // 绘制当前正在绘制的区域
+            if (currentDrawingArea != null) {
+                drawArea(context, currentDrawingArea);
+            }
+            
+            // 绘制说明文本
+            int infoY = MAP_Y + MAP_HEIGHT + 10;
+            context.drawText(this.textRenderer, 
+                Text.translatable("gui.real-rail-transit-mod.control_panel.instruction"), 
+                MAP_X, infoY, 0xAAAAAA, false);
         }
-        
-        // 绘制当前正在绘制的区域
-        if (currentDrawingArea != null) {
-            drawArea(context, currentDrawingArea);
-        }
-        
-        // 绘制说明文本
-        int infoY = MAP_Y + MAP_HEIGHT + 10;
-        context.drawText(this.textRenderer, 
-            Text.translatable("gui.real-rail-transit-mod.control_panel.instruction"), 
-            MAP_X, infoY, 0xAAAAAA, false);
     }
     
     private void drawArea(DrawContext context, Area area) {
@@ -320,8 +413,26 @@ public class ControlPanelScreen extends HandledScreen<ControlPanelScreenHandler>
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 检查是否在地图区域内点击
-        if (mouseX >= MAP_X && mouseX <= MAP_X + MAP_WIDTH &&
+        // 地图模式下的拖拽处理
+        if (currentTab.equals("map") && 
+            mouseX >= MAP_X && mouseX <= MAP_X + MAP_WIDTH &&
+            mouseY >= MAP_Y && mouseY <= MAP_Y + MAP_HEIGHT) {
+            
+            if (button == 0) {
+                // 左键点击：可以用于拖拽地图（未来实现）
+                return true;
+            } else if (button == 1) {
+                // 右键点击：重置视图到点击位置
+                BlockPos worldPos = worldMapRenderer.screenToWorld(
+                    (int) mouseX, (int) mouseY, MAP_X, MAP_Y, MAP_WIDTH, MAP_HEIGHT);
+                worldMapRenderer.setCenter(worldPos.getX(), worldPos.getZ());
+                return true;
+            }
+        }
+        
+        // 检查是否在地图区域内点击（区域绘制模式）
+        if (!currentTab.equals("map") &&
+            mouseX >= MAP_X && mouseX <= MAP_X + MAP_WIDTH &&
             mouseY >= MAP_Y && mouseY <= MAP_Y + MAP_HEIGHT &&
             currentDrawingArea != null && button == 0) {
             
@@ -334,6 +445,21 @@ public class ControlPanelScreen extends HandledScreen<ControlPanelScreenHandler>
         }
         
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+    
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        // 在地图模式下，鼠标滚轮缩放
+        if (currentTab.equals("map") && 
+            mouseX >= MAP_X && mouseX <= MAP_X + MAP_WIDTH &&
+            mouseY >= MAP_Y && mouseY <= MAP_Y + MAP_HEIGHT) {
+            
+            float zoomFactor = verticalAmount > 0 ? 1.1f : 0.9f;
+            worldMapRenderer.setZoom(worldMapRenderer.getZoom() * zoomFactor);
+            return true;
+        }
+        
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
     @Override

@@ -134,6 +134,18 @@
   "item.real-rail-transit-mod.shield_door_key.opened": "已打开屏蔽门",
   "item.real-rail-transit-mod.shield_door_key.closed": "已关闭屏蔽门",
   "item.real-rail-transit-mod.shield_door_key.info": "右键点击屏蔽门来开关门",
+  "item.real-rail-transit-mod.driver_key": "司机钥匙",
+  "item.real-rail-transit-mod.driver_key.info": "右键点击列车实体来启动/关闭列车引擎",
+  "item.real-rail-transit-mod.driver_key.train_started": "列车引擎已启动",
+  "item.real-rail-transit-mod.driver_key.train_stopped": "列车引擎已关闭",
+  
+  "screen.real-rail-transit-mod.addon_manager": "追加包管理",
+  "screen.real-rail-transit-mod.addon_manager.url_hint": "输入模型文件URL",
+  "screen.real-rail-transit-mod.addon_manager.download": "下载",
+  "screen.real-rail-transit-mod.addon_manager.refresh": "刷新",
+  "screen.real-rail-transit-mod.addon_manager.open_folder": "打开文件夹",
+  "screen.real-rail-transit-mod.addon_manager.import_file": "导入文件",
+  "screen.real-rail-transit-mod.addon_manager.hint": "提示：可以将追加包文件拖放到游戏窗口，或使用导入文件按钮",
   
   "signal_state.red": "红灯",
   "signal_state.yellow": "黄灯",
@@ -175,8 +187,10 @@
   "block.real-rail-transit-mod.track_construction_control_panel.info": "线路建设控制面板 - 右键打开设置",
   "block.real-rail-transit-mod.station_construction_control_panel.info": "车站建设控制面板 - 右键打开设置",
   "block.real-rail-transit-mod.daoji_machine.stopped": "盾构机已停止",
+  "block.real-rail-transit-mod.daoji_machine.started": "盾构机已启动",
   "block.real-rail-transit-mod.daoji_machine.digging": "盾构机正在挖掘: ({}, {}, {})",
   "block.real-rail-transit-mod.daoji_machine.cannot_dig": "无法在此位置挖掘",
+  "block.real-rail-transit-mod.daoji_machine.error": "盾构机错误",
   
   "block.real-rail-transit-mod.connection_part": "连接部分",
   "block.real-rail-transit-mod.switch": "辙叉",
@@ -367,6 +381,7 @@
   "gui.real-rail-transit-mod.train_panel.no_trains": "暂无列车",
   "gui.real-rail-transit-mod.train_panel.no_search_results": "未找到匹配的列车",
   "gui.real-rail-transit-mod.train_panel.import_hint": "将追加包放入 rrt_addons 文件夹后刷新",
+  "gui.real-rail-transit-mod.train_panel.import_folder": "导入文件夹",
   "gui.real-rail-transit-mod.train_panel.detail_title": "列车详情",
   "gui.real-rail-transit-mod.train_panel.detail_speed": "最高速度: %.0f km/h",
   "gui.real-rail-transit-mod.train_panel.detail_cars": "编组: %d 节 · 车厢长度: %.0f m",
@@ -408,6 +423,38 @@
   
   "key.real-rail-transit-mod.train_place": "放置列车",
   "key.real-rail-transit-mod.train_place_cancel": "取消放置",
-  "category.real-rail-transit-mod.train_placement": "Real Rail Transit - 列车放置"
+  "category.real-rail-transit-mod.train_placement": "Real Rail Transit - 列车放置",
+  
+  "key.real-rail-transit-mod.open_addon_manager": "打开追加包管理",
+  "category.real-rail-transit-mod.addon_manager": "Real Rail Transit - 追加包管理",
+  
+  "command.real-rail-transit-mod.rrtlang.current": "当前语言",
+  "command.real-rail-transit-mod.rrtlang.available": "可用语言",
+  "command.real-rail-transit-mod.rrtlang.switched": "已选择语言",
+  "command.real-rail-transit-mod.rrtlang.invalid": "无效的语言代码",
+  "command.real-rail-transit-mod.rrtlang.hint": "提示",
+  "command.real-rail-transit-mod.rrtlang.hint.mc_settings": "请在游戏设置（选项 -> 语言）中切换语言，或重启客户端。",
+  "command.real-rail-transit-mod.rrtlang.hint.supported": "当前模组支持的语言: 简体中文 (zh_cn), English (en_us)",
+  "command.real-rail-transit-mod.rrtlang.click_to_switch": "点击切换到 %s",
+  
+  "gui.real-rail-transit-mod.daoji_machine.title": "盾构机配置",
+  "gui.real-rail-transit-mod.daoji_machine.width": "宽度",
+  "gui.real-rail-transit-mod.daoji_machine.height": "高度",
+  "gui.real-rail-transit-mod.daoji_machine.type.circular": "圆形",
+  "gui.real-rail-transit-mod.daoji_machine.type.rectangular": "矩形",
+  "gui.real-rail-transit-mod.daoji_machine.direction.north": "北",
+  "gui.real-rail-transit-mod.daoji_machine.direction.south": "南",
+  "gui.real-rail-transit-mod.daoji_machine.direction.east": "东",
+  "gui.real-rail-transit-mod.daoji_machine.direction.west": "西",
+  "gui.real-rail-transit-mod.daoji_machine.direction.up": "上",
+  "gui.real-rail-transit-mod.daoji_machine.direction.down": "下",
+  "gui.real-rail-transit-mod.daoji_machine.direction.use_command": "使用 /rrtdaoji direction <方向> 设置",
+  "gui.real-rail-transit-mod.daoji_machine.start": "启动",
+  "gui.real-rail-transit-mod.daoji_machine.stop": "停止",
+  "gui.real-rail-transit-mod.daoji_machine.working": "工作中...",
+  "gui.real-rail-transit-mod.daoji_machine.path_type.straight": "直线",
+  "gui.real-rail-transit-mod.daoji_machine.path_type.curve": "曲线",
+  "gui.real-rail-transit-mod.daoji_machine.start_pos": "起点",
+  "gui.real-rail-transit-mod.daoji_machine.end_pos": "终点"
 }
 

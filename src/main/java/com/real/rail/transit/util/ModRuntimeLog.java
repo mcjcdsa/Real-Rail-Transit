@@ -61,6 +61,25 @@ public class ModRuntimeLog {
         addEntry(Level.ERROR, message, world);
     }
 
+    /**
+     * 客户端版本的日志方法（world 为 null）
+     * 用于客户端代码（如模型加载、渲染等）记录日志
+     */
+    public static void info(String message) {
+        RealRailTransitMod.LOGGER.info(message);
+        addEntry(Level.INFO, message, null);
+    }
+
+    public static void warn(String message) {
+        RealRailTransitMod.LOGGER.warn(message);
+        addEntry(Level.WARN, message, null);
+    }
+
+    public static void error(String message, Throwable throwable) {
+        RealRailTransitMod.LOGGER.error(message, throwable);
+        addEntry(Level.ERROR, message, null);
+    }
+
     public static java.util.List<Entry> getRecentEntries(int limit) {
         java.util.List<Entry> list;
         synchronized (ENTRIES) {

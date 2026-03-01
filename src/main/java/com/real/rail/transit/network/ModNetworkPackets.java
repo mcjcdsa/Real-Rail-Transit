@@ -52,6 +52,11 @@ public class ModNetworkPackets {
     public static final Identifier TRAIN_CONTROL = Identifier.of(RealRailTransitMod.MOD_ID, "train_control");
     public static final Identifier TRAIN_SPEED_UPDATE = Identifier.of(RealRailTransitMod.MOD_ID, "train_speed_update");
     
+    // 盾构机相关
+    public static final Identifier DAOJI_MACHINE_CONFIG = Identifier.of(RealRailTransitMod.MOD_ID, "daoji_machine_config");
+    public static final Identifier DAOJI_MACHINE_START = Identifier.of(RealRailTransitMod.MOD_ID, "daoji_machine_start");
+    public static final Identifier DAOJI_MACHINE_STOP = Identifier.of(RealRailTransitMod.MOD_ID, "daoji_machine_stop");
+    
     public static void register() {
         RealRailTransitMod.LOGGER.info("注册网络包...");
         
@@ -70,6 +75,9 @@ public class ModNetworkPackets {
         PayloadTypeRegistry.playC2S().register(StationConstructionSelectFacilityPayload.ID, StationConstructionSelectFacilityPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(PlaceTrainPayload.ID, PlaceTrainPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(TrainControlPayload.ID, TrainControlPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DaojiMachineConfigPayload.ID, DaojiMachineConfigPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DaojiMachineStartPayload.ID, DaojiMachineStartPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(DaojiMachineStopPayload.ID, DaojiMachineStopPayload.CODEC);
         
         // 注册Payload类型（S2C - 服务器到客户端）
         PayloadTypeRegistry.playS2C().register(TrainSpeedUpdatePayload.ID, TrainSpeedUpdatePayload.CODEC);
@@ -428,6 +436,106 @@ public class ModNetworkPackets {
                             // train.toggleRightDoor();
                         }
                         break;
+                }
+            });
+        });
+        
+        // 注册盾构机网络包处理器
+        ServerPlayNetworking.registerGlobalReceiver(DaojiMachineConfigPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                var world = context.player().getWorld();
+                var blockEntity = world.getBlockEntity(pos);
+                if (blockEntity instanceof com.real.rail.transit.block.entity.DaojiMachineBlockEntity entity) {
+                    entity.setTunnelWidth(payload.width());
+                    entity.setTunnelHeight(payload.height());
+                    entity.setTunnelType(payload.tunnelType());
+                    try {
+                        String replaceIdStr = payload.replaceBlockId();
+                        net.minecraft.util.Identifier replaceId;
+                        if (replaceIdStr.contains(":")) {
+                            String[] parts = replaceIdStr.split(":", 2);
+                            replaceId = net.minecraft.util.Identifier.of(parts[0], parts[1]);
+                        } else {
+                            replaceId = net.minecraft.util.Identifier.of("minecraft", replaceIdStr);
+                        }
+                        net.minecraft.block.Block replaceBlock = world.getRegistryManager().get(net.minecraft.registry.Registries.BLOCK.getKey()).get(replaceId);
+                        if (replaceBlock != null) {
+                            entity.setReplaceBlock(replaceBlock.getDefaultState());
+                        }
+                    } catch (Exception e) {
+                        RealRailTransitMod.LOGGER.warn("无法设置替换方块: {}", payload.replaceBlockId(), e);
+                    }
+                    try {
+                        String wallIdStr = payload.wallBlockId();
+                        net.minecraft.util.Identifier wallId;
+                        if (wallIdStr.contains(":")) {
+                            String[] parts = wallIdStr.split(":", 2);
+                            wallId = net.minecraft.util.Identifier.of(parts[0], parts[1]);
+                        } else {
+                            wallId = net.minecraft.util.Identifier.of("minecraft", wallIdStr);
+                        }
+                        net.minecraft.block.Block wallBlock = world.getRegistryManager().get(net.minecraft.registry.Registries.BLOCK.getKey()).get(wallId);
+                        if (wallBlock != null) {
+                            entity.setWallBlock(wallBlock.getDefaultState());
+                        }
+                    } catch (Exception e) {
+                        RealRailTransitMod.LOGGER.warn("无法设置隧道壁方块: {}", payload.wallBlockId(), e);
+                    }
+                    try {
+                        net.minecraft.util.math.Direction dir = net.minecraft.util.math.Direction.byName(payload.direction());
+                        if (dir != null) {
+                            entity.setBoringDirection(dir);
+                        }
+                    } catch (Exception e) {
+                        RealRailTransitMod.LOGGER.warn("无法设置盾构方向: {}", payload.direction(), e);
+                    }
+                    entity.markDirty();
+                }
+            });
+        });
+        
+        ServerPlayNetworking.registerGlobalReceiver(DaojiMachineStartPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                var world = context.player().getServerWorld();
+                var blockEntity = world.getBlockEntity(pos);
+                if (blockEntity instanceof com.real.rail.transit.block.entity.DaojiMachineBlockEntity entity) {
+                    // 如果设置了起点和终点，重新计算路径
+                    if (entity.getStartPos() != null && entity.getEndPos() != null) {
+                        entity.setPathPoints(null); // 清除旧路径，触发重新计算
+                        entity.setProgress(0); // 重置进度
+                    }
+                    entity.setWorking(true);
+                    entity.markDirty();
+                    // 更新方块状态
+                    net.minecraft.block.BlockState state = world.getBlockState(pos);
+                    if (state.getBlock() instanceof com.real.rail.transit.block.DaojiMachineBlock) {
+                        world.setBlockState(pos, state.with(com.real.rail.transit.block.DaojiMachineBlock.WORKING, true));
+                    }
+                    // 通知 WorldTickHandler
+                    com.real.rail.transit.world.WorldTickHandler.notifyDaojiStarted(world, pos);
+                    context.player().sendMessage(net.minecraft.text.Text.translatable("block.real-rail-transit-mod.daoji_machine.started"), false);
+                }
+            });
+        });
+        
+        ServerPlayNetworking.registerGlobalReceiver(DaojiMachineStopPayload.ID, (payload, context) -> {
+            context.server().execute(() -> {
+                BlockPos pos = payload.pos();
+                var world = context.player().getServerWorld();
+                var blockEntity = world.getBlockEntity(pos);
+                if (blockEntity instanceof com.real.rail.transit.block.entity.DaojiMachineBlockEntity entity) {
+                    entity.setWorking(false);
+                    entity.markDirty();
+                    // 更新方块状态
+                    net.minecraft.block.BlockState state = world.getBlockState(pos);
+                    if (state.getBlock() instanceof com.real.rail.transit.block.DaojiMachineBlock) {
+                        world.setBlockState(pos, state.with(com.real.rail.transit.block.DaojiMachineBlock.WORKING, false));
+                    }
+                    // 通知 WorldTickHandler
+                    com.real.rail.transit.world.WorldTickHandler.notifyDaojiStopped(pos);
+                    context.player().sendMessage(net.minecraft.text.Text.translatable("block.real-rail-transit-mod.daoji_machine.stopped"), false);
                 }
             });
         });
@@ -1090,6 +1198,69 @@ public class ModNetworkPackets {
             net.minecraft.network.codec.PacketCodecs.DOUBLE, TrainSpeedUpdatePayload::targetSpeed,
             net.minecraft.network.codec.PacketCodecs.DOUBLE, TrainSpeedUpdatePayload::maxSpeed,
             TrainSpeedUpdatePayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    // 盾构机配置 Payload
+    public record DaojiMachineConfigPayload(BlockPos pos, int width, int height, String tunnelType, 
+                                           String replaceBlockId, String wallBlockId, String direction) implements CustomPayload {
+        public static final Id<DaojiMachineConfigPayload> ID = new Id<>(DAOJI_MACHINE_CONFIG);
+        public static final PacketCodec<RegistryByteBuf, DaojiMachineConfigPayload> CODEC = new PacketCodec<RegistryByteBuf, DaojiMachineConfigPayload>() {
+            @Override
+            public DaojiMachineConfigPayload decode(RegistryByteBuf buf) {
+                BlockPos pos = BLOCK_POS_CODEC.decode(buf);
+                int width = buf.readVarInt();
+                int height = buf.readVarInt();
+                String tunnelType = buf.readString();
+                String replaceBlockId = buf.readString();
+                String wallBlockId = buf.readString();
+                String direction = buf.readString();
+                return new DaojiMachineConfigPayload(pos, width, height, tunnelType, replaceBlockId, wallBlockId, direction);
+            }
+            
+            @Override
+            public void encode(RegistryByteBuf buf, DaojiMachineConfigPayload value) {
+                BLOCK_POS_CODEC.encode(buf, value.pos());
+                buf.writeVarInt(value.width());
+                buf.writeVarInt(value.height());
+                buf.writeString(value.tunnelType());
+                buf.writeString(value.replaceBlockId());
+                buf.writeString(value.wallBlockId());
+                buf.writeString(value.direction());
+            }
+        };
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    // 盾构机启动 Payload
+    public record DaojiMachineStartPayload(BlockPos pos) implements CustomPayload {
+        public static final Id<DaojiMachineStartPayload> ID = new Id<>(DAOJI_MACHINE_START);
+        public static final PacketCodec<RegistryByteBuf, DaojiMachineStartPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, DaojiMachineStartPayload::pos,
+            DaojiMachineStartPayload::new
+        );
+        
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+    
+    // 盾构机停止 Payload
+    public record DaojiMachineStopPayload(BlockPos pos) implements CustomPayload {
+        public static final Id<DaojiMachineStopPayload> ID = new Id<>(DAOJI_MACHINE_STOP);
+        public static final PacketCodec<RegistryByteBuf, DaojiMachineStopPayload> CODEC = PacketCodec.tuple(
+            BLOCK_POS_CODEC, DaojiMachineStopPayload::pos,
+            DaojiMachineStopPayload::new
         );
         
         @Override

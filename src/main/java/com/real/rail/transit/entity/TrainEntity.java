@@ -34,6 +34,14 @@ public class TrainEntity extends Entity {
     private boolean passengerLightOn = true;
     private boolean pantographUp = true;
     private Direction direction = Direction.FORWARD;
+    
+    // 照明系统扩展状态（根据GB/T 7928-2025、TB/T 2325.1-2019标准）
+    private boolean tailLightOn = false; // 尾灯（标志灯）
+    private int runningLightState = 0; // 运行灯状态：0=关闭, 1=前端白色, 2=后端红色, 3=两端红色, 4=两端白色
+    private boolean emergencyLightActive = false; // 应急照明激活
+    private float passengerLightBrightness = 1.0f; // 客室照明亮度 (0.0-1.0)
+    private boolean autoDimEnabled = true; // 自动调光启用
+    private float ambientLightLevel = 0.0f; // 环境光强度 (lux)
 
     /**
      * 行驶方向枚举
@@ -129,6 +137,13 @@ public class TrainEntity extends Entity {
                 this.direction = Direction.valueOf(dir);
             } catch (IllegalArgumentException ignored) {}
         }
+        // 照明系统扩展状态
+        this.tailLightOn = nbt.getBoolean("tailLightOn");
+        this.runningLightState = nbt.getInt("runningLightState");
+        this.emergencyLightActive = nbt.getBoolean("emergencyLightActive");
+        this.passengerLightBrightness = nbt.getFloat("passengerLightBrightness");
+        this.autoDimEnabled = nbt.getBoolean("autoDimEnabled");
+        this.ambientLightLevel = nbt.getFloat("ambientLightLevel");
     }
     
     @Override
@@ -145,6 +160,13 @@ public class TrainEntity extends Entity {
         nbt.putBoolean("passengerLightOn", this.passengerLightOn);
         nbt.putBoolean("pantographUp", this.pantographUp);
         nbt.putString("direction", this.direction.name());
+        // 照明系统扩展状态
+        nbt.putBoolean("tailLightOn", this.tailLightOn);
+        nbt.putInt("runningLightState", this.runningLightState);
+        nbt.putBoolean("emergencyLightActive", this.emergencyLightActive);
+        nbt.putFloat("passengerLightBrightness", this.passengerLightBrightness);
+        nbt.putBoolean("autoDimEnabled", this.autoDimEnabled);
+        nbt.putFloat("ambientLightLevel", this.ambientLightLevel);
     }
     
     @Override
@@ -157,6 +179,9 @@ public class TrainEntity extends Entity {
         // 更新移动系统
         com.real.rail.transit.system.TrainMovementSystem.getInstance()
             .updateTrainMovement(this.getWorld(), this);
+        
+        // 更新照明系统（根据中国地铁照明标准）
+        com.real.rail.transit.system.TrainLightingSystem.tick(this);
     }
     
     /**
@@ -387,5 +412,26 @@ public class TrainEntity extends Entity {
     public void setPantographUp(boolean up) { this.pantographUp = up; }
     public Direction getDirection() { return direction; }
     public void setDirection(Direction d) { this.direction = d; }
+    
+    // 照明系统扩展状态访问器
+    public boolean isTailLightOn() { return tailLightOn; }
+    public void setTailLightOn(boolean on) { this.tailLightOn = on; }
+    
+    public int getRunningLightState() { return runningLightState; }
+    public void setRunningLightState(int state) { this.runningLightState = state; }
+    
+    public boolean isEmergencyLightActive() { return emergencyLightActive; }
+    public void setEmergencyLightActive(boolean active) { this.emergencyLightActive = active; }
+    
+    public float getPassengerLightBrightness() { return passengerLightBrightness; }
+    public void setPassengerLightBrightness(float brightness) { 
+        this.passengerLightBrightness = Math.max(0.0f, Math.min(1.0f, brightness)); 
+    }
+    
+    public boolean isAutoDimEnabled() { return autoDimEnabled; }
+    public void setAutoDimEnabled(boolean enabled) { this.autoDimEnabled = enabled; }
+    
+    public float getAmbientLightLevel() { return ambientLightLevel; }
+    public void setAmbientLightLevel(float level) { this.ambientLightLevel = Math.max(0.0f, level); }
 }
 

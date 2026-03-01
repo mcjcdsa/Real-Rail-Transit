@@ -1,6 +1,7 @@
 package com.real.rail.transit.client.screen;
 
 import com.real.rail.transit.block.screen.ControlPanelScreenHandler;
+import com.real.rail.transit.block.screen.DaojiMachineScreenHandler;
 import com.real.rail.transit.block.screen.TrackConstructionControlPanelScreenHandler;
 import com.real.rail.transit.block.screen.TrackControlPanelScreenHandler;
 import com.real.rail.transit.block.screen.TrainPanelScreenHandler;
@@ -26,6 +27,7 @@ public class ModScreens {
         HandledScreens.register(TrackControlPanelScreenHandler.TYPE, TrackControlPanelScreen::new);
         HandledScreens.register(TrainPanelScreenHandler.TYPE, TrainPanelScreen::new);
         HandledScreens.register(ControlPanelScreenHandler.TYPE, ControlPanelScreen::new);
+        HandledScreens.register(DaojiMachineScreenHandler.TYPE, DaojiMachineScreen::new);
     }
 }
 

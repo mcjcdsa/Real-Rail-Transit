@@ -1,5 +1,6 @@
 package com.real.rail.transit.registry;
 
+import com.real.rail.transit.block.entity.DaojiMachineBlockEntity;
 import com.real.rail.transit.block.entity.SensorControllerBlockEntity;
 import com.real.rail.transit.block.entity.SignalBlockEntity;
 import com.real.rail.transit.block.entity.TrainPowerSettingControllerBlockEntity;
@@ -22,6 +23,7 @@ public class ModBlockEntities {
         SensorControllerBlockEntity.register();
         TrainPowerSettingControllerBlockEntity.register();
         StationMarkerBlockEntity.register();
+        DaojiMachineBlockEntity.register();
     }
 }
 
